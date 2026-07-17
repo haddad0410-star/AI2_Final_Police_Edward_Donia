@@ -1,0 +1,35 @@
+# Secrets — must never be committed, must live outside this repo entirely
+.env
+credentials.json
+token.json
+client_secret*.json
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# uv
+uv.lock.tmp
+
+# OS
+.DS_Store
+
+# Project runtime artifacts (kept locally, not part of source)
+logs/*.json
+!logs/.gitkeep
+reports/*.json
+reports/*.txt
+!reports/.gitkeep

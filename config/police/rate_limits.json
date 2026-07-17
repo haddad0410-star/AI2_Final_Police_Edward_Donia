@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "_note": "Private Gatekeeper rate-limit config, built from Appendix F Table 19 (all minimums -- may only be raised). Applies to this peer's own outbound API calls (Gmail primarily; MCP calls recommended too). Structure is our own design, not copied from reference_only.",
+  "requests_per_minute": 30,
+  "concurrent_requests": 2,
+  "retry_backoff_sec": 5,
+  "max_retries": 3,
+  "queue_depth": 100,
+  "gmail": {
+    "requests_per_minute": 5,
+    "concurrent_requests": 1,
+    "retry_backoff_sec": 10,
+    "max_retries": 2,
+    "_note": "Stricter than the Appendix F minimum since Gmail sends are rare and high-stakes; not a binding book value, just a conservative local default."
+  }
+}
