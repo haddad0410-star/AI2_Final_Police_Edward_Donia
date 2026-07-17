@@ -14,13 +14,16 @@ Define local game physics: board, movement, barriers, scoring, series structure.
 
 ## Acceptance criteria (measurable)
 
-- [ ] All legal-move generation matches the negotiated `move_set`.
-- [ ] Barrier placement legality tests pass (adjacency + permanence + no self-removal).
-- [ ] Scoring unit tests match the table above exactly.
-- [ ] A 6-sub-game series runs to completion locally.
+- [x] All legal-move generation matches the negotiated `move_set` — `domain/rules.py::legal_move_directions`, `tests/unit/test_rules.py` (15 tests, incl. diagonal rejection, boundary rejection, barrier collision).
+- [x] Barrier placement legality tests pass (adjacency + permanence + no self-removal) — `domain/rules.py::is_legal_barrier_cell`/`place_barrier`, same test file; see also `docs/adr/ADR-0011-trapped-thief-interpretation.md` for the STAY-always-legal interpretation.
+- [x] Scoring unit tests match the table above exactly — `domain/scoring.py`, `tests/unit/test_scoring.py` (4 tests).
+- [ ] A 6-sub-game series runs to completion locally — not yet; Batch 1 only proves a single negotiation handshake (`integration_lab/evidence/negotiation_smoke/`), not a played sub-game.
 
 ## Out of scope (for now)
 
-Scent/belief model (see PRD_scent_belief.md). Cryptographic sealing (see PRD_commit_reveal.md).
+Scent/belief model (see PRD_scent_belief.md — now implemented). Cryptographic sealing
+(see PRD_commit_reveal.md — still not implemented, schemas only).
 
-Status: design only, not implemented. See `integration_lab/audit/PROGRESS.md`.
+Status: board/rules/scoring implemented and tested (Batch 1); the full game loop that
+would actually play a sub-game to completion is a later batch. See
+`integration_lab/audit/PROGRESS.md`.

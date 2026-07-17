@@ -12,13 +12,27 @@ Define the scent emission/decay model and the belief-fusion algorithm.
 
 ## Acceptance criteria (measurable)
 
-- [ ] Belief grid always sums to 1.
-- [ ] Physically impossible cells always receive zero probability.
-- [ ] No test can recover the opponent's exact true position from the belief grid.
-- [ ] Decay matches the book's formula to floating-point tolerance.
+- [x] Belief grid always sums to 1 — `domain/belief_model.py::normalize`,
+      `tests/unit/test_belief.py` (13 tests, incl. degenerate all-zero fallback).
+- [x] Physically impossible cells always receive zero probability —
+      `domain/belief_updates.py::apply_barrier_mask`; a hint can never revive a
+      hard-zeroed cell (tested explicitly).
+- [x] No test can recover the opponent's exact true position from the belief grid —
+      structural guarantee, enforced by
+      `test_no_function_accepts_an_opponent_true_position_parameter` (signature
+      introspection over every function in `belief_updates`, not just a convention).
+- [x] Decay matches the book's formula to floating-point tolerance —
+      `domain/scent.py::apply_turn`, `tests/unit/test_scent.py` (10 tests: exact
+      center value, exact 5x5 matrix, edge/corner clipping, one/repeated decay,
+      re-emission, zero floor). Real computed values saved in
+      `integration_lab/evidence/scent_reference_run.json` and
+      `belief_reference_run.json` (not fabricated).
+
+Full writeup: `docs/BELIEF_MODEL.md` (explicitly not claiming Bayesian optimality).
 
 ## Out of scope (for now)
 
-Strategy use of the belief grid (see PRD_strategy.md).
+Strategy use of the belief grid (see PRD_strategy.md — still design only).
 
-Status: design only, not implemented. See `integration_lab/audit/PROGRESS.md`.
+Status: scent + belief model implemented and tested (Batch 1). See
+`integration_lab/audit/PROGRESS.md`.

@@ -1,0 +1,21 @@
+version = "0.1.0"
+
+[game]
+group_name = "Edward-Donia"
+group_id = "edward-donia"
+sub_game_number = 1
+members = ["Edward Haddad 214083115", "Donia Naser 212810493"]
+repos = { police = "https://example.invalid/police", thief = "https://example.invalid/thief" }
+
+[network]
+my_port = 8901
+opponent_url = "http://127.0.0.1:8902/mcp"
+turn_timeout_seconds = 180
+
+[trash_talk]
+provider = "template"
+
+[email]
+recipient = "rmisegal+uoh26finalgame@gmail.com"
+mode = "disabled"
+credentials_dir_env_var = "GMAIL_CREDENTIALS_DIR"

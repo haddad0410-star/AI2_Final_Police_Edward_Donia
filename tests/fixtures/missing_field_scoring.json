@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "_note": "DRAFT shared, agreed game terms for the AI2 final project (Edward Haddad / Donia Naser, provisional group id 'edward-donia' -- verify against the course's binding group-ID rule). Both peers (police_peer, thief_peer) must hold a byte-for-byte identical copy of this file; integration_lab/scripts/verify_shared_config.py checks this by SHA-256. Source of every value: integration_lab/audit/binding_parameters.json, itself extracted from Appendix F of assignment_materials/police_thief_p2p.pdf and visually re-verified (integration_lab/audit/visual_verification.md). This is NOT copied from reference_only/config -- it is built fresh from our own audit of the book.",
+  "agreed_between": [
+    "edward-donia"
+  ],
+  "_agreed_between_note": "Placeholder for local self-play/smoke testing under our own provisional group id. Replace with ['edward-donia', '<opponent-group-id>'] once a real opponent is negotiated (see integration_lab/audit/manual_gates.md Gate B). Never invent an opponent identity.",
+  "board_and_agents": {
+    "grid_size": 7,
+    "num_agents": 2,
+    "thief_start": [
+      3,
+      3
+    ],
+    "cop_start": [
+      0,
+      0
+    ],
+    "axis_origin_corner": "top-left",
+    "axis_start_index": 0,
+    "_status_note": "grid_size=minimum (may only be raised); the rest of this block is negotiable (example values used as default absent an explicit agreement, per Appendix F's own status-definition rule)."
+  },
+  "world": {
+    "map_area": "New York",
+    "hint_max_words": 15,
+    "_status_note": "Both fields negotiable; 'New York' and 15 are the book's own Appendix F Table 14 example values, used here as the mandatory default absent a negotiated alternative -- not copied from the reference repository."
+  },
+  "movement_and_barriers": {
+    "move_set": [
+      "N",
+      "S",
+      "E",
+      "W",
+      "STAY"
+    ],
+    "max_barriers": 14,
+    "max_moves": 35,
+    "survival_threshold": 35,
+    "_status_note": "move_set is constant. max_barriers/max_moves/survival_threshold are minimums (may only be raised by mutual agreement)."
+  },
+  "pheromones": {
+    "pheromone_center_intensity": 0.9,
+    "pheromone_decay": 0.1,
+    "pheromone_grid_size": 5,
+    "_status_note": "All three constant, visually confirmed against Appendix F Table 16 and the Ch.4 scent-emission figure. Deliberately excludes 'pheromone_min_center_intensity' seen in the reference repo's config: that field is NOT a numbered Appendix F row and is not treated as mandatory here -- see integration_lab/audit/risk_register.md risk #2."
+  },
+  "network_and_league": {
+    "response_timeout_sec": 30,
+    "watchdog_timeout_sec": 60,
+    "num_games": 6,
+    "diversity_reward": 10,
+    "min_games_to_pass": 2,
+    "max_games_per_team": 10,
+    "token_budget_per_series": 200000,
+    "_status_note": "num_games=6 (constant, visually confirmed Appendix F Table 18 row 1) is the REQUIRED length of a full series against one opponent -- NOT 1. A num_games=1 single-sub-game smoke-test fixture is kept separately at integration_lab/config_fixtures/game_smoke_1.json and must never be used as the league default. diversity_reward/min_games_to_pass/max_games_per_team are constants; response_timeout_sec/watchdog_timeout_sec/token_budget_per_series are negotiable (example values used as default)."
+  },
+  "rate_limiter_gatekeeper": {
+    "requests_per_minute": 30,
+    "concurrent_requests": 2,
+    "retry_backoff_sec": 5,
+    "max_retries": 3,
+    "queue_depth": 100,
+    "_status_note": "All five are minimums (Appendix F Table 19), may only be raised by mutual agreement."
+  }
+}

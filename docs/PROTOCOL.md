@@ -7,9 +7,15 @@ summarizes only what's specific to running this repo as the Police side.
 - Opponent URL: supplied via this peer's own `game.toml` / `.env` (`OPPONENT_MCP_URL`) —
   the only network detail this peer is given about the opponent.
 - Tool surface exposed by this peer's FastMCP server: `negotiate`, `receive_turn`,
-  `submit_audit`, `receive_control` (see canonical doc for exact schemas — none of this
-  is implemented yet in this scaffold).
+  `submit_audit`, `receive_control` (see canonical doc for exact schemas). **Batch 1
+  implements only `health`, `negotiate`, and `propose_config`** (real HTTP, see
+  `src/police_peer/infrastructure/mcp_server.py`) — `receive_turn`/`submit_audit`/
+  `receive_control` are schemas only (`src/police_peer/protocol/`), not yet wired to
+  server tools; that is a later batch. See `docs/adr/ADR-0012-receive-move-alias-
+  assessment.md` for the `receive_move` alias decision.
 - Police-specific wire fields: `capture_claim` (this side sends it), `barrier_placed` (this side sends it, publicly and truthfully).
 - Four JSON artifacts this peer writes each series: `declaration_<game_id>.json`,
   `config_<game_id>_g<NN>.json` (x6), `log_<game_id>_g<NN>.json` (x6),
-  `result_<game_id>.json`.
+  `result_<game_id>.json`. Not implemented yet (later batch).
+- Real two-process negotiation evidence: `integration_lab/evidence/negotiation_smoke/`
+  (actual stdout/stderr/exit codes from two independently-launched OS processes).

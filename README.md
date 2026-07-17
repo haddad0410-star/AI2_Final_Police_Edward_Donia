@@ -1,6 +1,10 @@
 # AI2 Final Project — Police Peer (police_peer)
 
-**Status: Phase 1-2 scaffold. No application code implemented yet.**
+**Status: Implementation Batch 1.** Configuration, domain models, board physics,
+scent/belief models, protocol schemas, and a minimal real FastMCP HTTP vertical slice
+(health/negotiate/config-hash-compare) are implemented and tested — see "What's
+actually implemented" below. The full turn-by-turn game loop, strategy, cryptographic
+lifecycle, GUI, replay, and Gmail reporting are **not** implemented yet.
 
 ## Abstract
 
@@ -24,13 +28,32 @@ Per the project's isolation rules, this repository does **not** import from the 
 repository or from `integration_lab/` at runtime. Any resemblance in wire format is by
 shared protocol contract only (see `docs/PROTOCOL.md`).
 
-## What this repo is (and isn't) right now
+## What's actually implemented (Batch 1)
 
-This scaffold contains: directory structure, documentation skeletons, ADRs, and draft
-configuration files. It does **not** yet contain: a FastMCP server/client, a game engine,
-a state machine, strategy logic, the scent/belief model, cryptographic commit-reveal, a
-GUI, a replay viewer, or a Gmail reporter. Those are implemented in later phases, after
-this scaffold is reviewed and approved.
+- **Configuration**: strict loaders/validators for `game.json` (shared, byte-identical
+  with `thief_peer`, SHA-256-verified), `game.toml` (private, rejects any attempt to
+  override a shared field), `rate_limits.json`.
+- **Domain models**: `Role`, `Position`/`Direction`, move/barrier/stay actions, hints,
+  capture claim/response, `LocalPeerState` — structurally guaranteed (tested by field
+  introspection, not just convention) to hold only this peer's own truth.
+- **Board physics**: legal movement (4-orthogonal + STAY, no diagonals), barrier
+  placement legality (own-cell or orthogonally-adjacent only, visually verified
+  against the book), capture/scoring rules.
+- **Scent + belief models**: exact 5x5 emission matrix and decay formula; a normalized
+  probabilistic belief update (not claimed Bayesian-optimal) — see
+  `docs/BELIEF_MODEL.md`.
+- **Protocol schemas**: strict validation for every message category in
+  `integration_lab/audit/protocol_contract.md`.
+- **Minimal real FastMCP HTTP vertical slice**: `health`/`negotiate`/`propose_config`
+  tools, proven over an actual two-independent-process HTTP handshake — evidence in
+  `integration_lab/evidence/negotiation_smoke/`.
+- 100 tests, 94.43% coverage, 0 Ruff violations, every file ≤150 meaningful lines.
+
+## What's not implemented yet
+
+A game engine that actually plays a sub-game, strategy logic, the full commit-reveal/
+audit lifecycle, a state machine, GUI, replay viewer, or Gmail reporter. Those are
+later batches, after this batch is reviewed and approved.
 
 ## Problem formulation
 
@@ -89,6 +112,10 @@ See `docs/LIMITATIONS.md` — kept current, updated every phase.
 
 ```
 uv sync
+uv run python -m police_peer negotiate-smoke   # IMPLEMENTED (Batch 1) -- requires
+                                                 # thief_peer's own negotiate-smoke
+                                                 # running too; see
+                                                 # integration_lab/run_negotiation_smoke.py
 uv run python -m police_peer peer --role police --no-gui   # NOT YET IMPLEMENTED
 ```
 
