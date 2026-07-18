@@ -111,8 +111,11 @@ def build_peer_server(
 
 
 async def run_server_until_cancelled(mcp: FastMCP, host: str, port: int) -> None:
-    """Run the HTTP server; kept for callers that cancel the task directly.
+    """Run the HTTP server; kept only for older tests that cancel the task
+    directly as a lightweight stand-in opponent server.
 
-    Prefer ``server_lifecycle.serve_until_shutdown`` + ``stop_server`` for a
-    classified, quiet shutdown (Phase 1)."""
+    Production code, and any test that needs a genuinely graceful stop (one
+    that actually closes the listening socket -- a bare cancel here does
+    not, see ``server_lifecycle``'s module docstring), should use
+    ``server_lifecycle.ManagedServer`` instead."""
     await mcp.run_http_async(host=host, port=port, show_banner=False, log_level="warning")

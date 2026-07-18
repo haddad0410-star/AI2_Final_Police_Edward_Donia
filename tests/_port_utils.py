@@ -13,14 +13,13 @@ unrelated process on the machine.
 
 from __future__ import annotations
 
-import asyncio
-import contextlib
 import re
 import socket
 from pathlib import Path
 
-import uvicorn
 from fastmcp import FastMCP
+
+from police_peer.infrastructure.server_lifecycle import ManagedServer
 
 HOST = "127.0.0.1"
 
@@ -77,55 +76,20 @@ def isolated_police_config_dir(
     return dest_dir
 
 
-async def start_test_server(
-    mcp: FastMCP, port: int, host: str = HOST
-) -> tuple[asyncio.Task, uvicorn.Server]:
-    """Start ``mcp``'s real HTTP ASGI app under a directly-owned
-    ``uvicorn.Server`` -- the same app object ``FastMCP.run_http_async``
-    itself would serve, just assembled here instead of inside that helper --
-    so this code keeps a handle to ``server`` and can request a genuinely
-    graceful shutdown afterwards.
-
-    This deliberately does NOT go through ``run_http_async`` + task
-    cancellation (the pattern used elsewhere in this suite and by
-    ``police_peer.infrastructure.server_lifecycle.stop_server``, and even by
-    FastMCP's own official ``fastmcp.utilities.tests.run_server_async``
-    helper). Verified by direct experiment during the Batch-2 port-collision
-    recovery: uvicorn's ``Server._serve()`` only calls ``Server.shutdown()``
-    (which actually closes the listening socket) when its polling
-    ``main_loop()`` returns normally after observing ``should_exit``; a raw
-    ``Task.cancel()`` interrupts ``_serve()`` mid-``main_loop()`` and skips
-    ``shutdown()`` entirely -- there is no ``try/finally`` around it -- which
-    permanently leaks the listening socket for the rest of the process, not
-    just a transient race. Owning the ``uvicorn.Server`` instance lets this
-    helper set ``should_exit = True`` instead, which *is* observed by
-    ``main_loop()`` and reaches the real socket-closing ``shutdown()`` path.
+async def start_test_server(mcp: FastMCP, port: int, host: str = HOST) -> ManagedServer:
+    """Start ``mcp``'s real HTTP ASGI app via the same production-grade
+    :class:`~police_peer.infrastructure.server_lifecycle.ManagedServer` used
+    by ``server_lifecycle.py`` itself -- see its module docstring for why
+    task-cancellation-based shutdown does not reliably close the listening
+    socket, and why this replaced it everywhere (production and tests
+    alike).
     """
-    app = mcp.http_app(transport="http")
-    config = uvicorn.Config(
-        app, host=host, port=port, log_level="warning", lifespan="on", ws="websockets-sansio"
-    )
-    server = uvicorn.Server(config)
-    task = asyncio.create_task(server.serve())
-    while not server.started:
-        await asyncio.sleep(0.01)
-    return task, server
+    server = ManagedServer(mcp, host, port)
+    await server.start()
+    return server
 
 
-async def stop_test_server(task: asyncio.Task, server: uvicorn.Server) -> None:
-    """Request a graceful shutdown of a server started with
-    :func:`start_test_server` and wait for it, so the listening socket is
-    genuinely closed (not just no-longer-cancelled) before this returns.
-
-    Tolerates the task already being cancelled: production's
-    ``server_lifecycle.stop_server`` (used internally by
-    ``run_subgame_headless``/``run_series_headless`` for this peer's own
-    server) drains "every other task still pending on the loop" as part of
-    its own teardown, which -- when a test runs a second real server
-    concurrently on the same loop, e.g. an opponent stand-in -- reaches this
-    task too. Either way the caller's intent (this server should be stopped)
-    is satisfied.
-    """
-    server.should_exit = True
-    with contextlib.suppress(asyncio.CancelledError):
-        await task
+async def stop_test_server(server: ManagedServer) -> None:
+    """Stop a server started with :func:`start_test_server`, waiting for a
+    genuinely graceful shutdown before returning."""
+    await server.stop()

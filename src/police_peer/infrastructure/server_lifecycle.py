@@ -1,142 +1,164 @@
-"""Classified, quiet shutdown of the FastMCP HTTP server task.
+"""Real, graceful FastMCP HTTP server lifecycle.
 
-Cancelling the asyncio.Task that runs uvicorn is the intended way to stop the
-server, but a bare ``Task.cancel()`` lets uvicorn's lifespan machinery surface
-the resulting ``CancelledError`` as an apparently-unhandled traceback even
-though the shutdown was completely deliberate (see
-``../integration_lab/evidence/shutdown_cleanup/police_before.txt``).
+Cancelling the ``asyncio.Task`` wrapping ``FastMCP.run_http_async()`` (this
+module's previous implementation) does not reliably close the underlying
+Uvicorn listening socket: ``uvicorn.Server._serve()`` only reaches its
+socket-closing ``shutdown()`` when its own polling ``main_loop()`` returns
+normally after observing ``should_exit`` -- there is no ``try/finally``
+around that call, so a raw ``Task.cancel()`` skips ``shutdown()`` entirely
+and permanently leaks the listening socket for the rest of the process.
+Verified by direct experiment during the Batch-2 recovery (see
+``integration_lab/evidence/session_recovery_step_a/police_port_fix/`` and
+``integration_lab/evidence/session_recovery_step_b/server_lifecycle/``).
 
-This module draws the distinction the plain ``contextlib.suppress`` cannot: a
-cancellation is only treated as expected/silent when it was requested through a
-:class:`ShutdownController` immediately before the cancel. Any cancellation that
-arrives WITHOUT such a request is genuinely unexpected and is re-raised so it
-still surfaces as an error. We never globally swallow every ``CancelledError``.
+:class:`ManagedServer` owns a directly-built ``uvicorn.Server`` for FastMCP's
+own real ASGI app (``mcp.http_app()`` -- the same app ``run_http_async``
+itself would serve), so production code has an actual handle to request a
+graceful stop (``should_exit``), escalate to a forced stop (``force_exit``,
+skips waiting on in-flight connections) if that does not finish within a
+bounded timeout, and cancel only as the absolute last resort -- honestly
+classifying which of the three actually happened. Cancellation is never used
+as the *normal* shutdown path, and nothing here globally suppresses
+``CancelledError``: an unexpected cancellation of the server task from
+outside this module still propagates.
 """
 
 from __future__ import annotations
 
 import asyncio
 import contextlib
-import logging
+import enum
+from dataclasses import dataclass
 
+import uvicorn
 from fastmcp import FastMCP
 
-#: Loggers whose only output during an intentional cancel is the cosmetic
-#: lifespan-teardown traceback. They are quieted for the duration of the
-#: requested shutdown and restored immediately afterwards -- never disabled
-#: globally, so a real runtime error still logs normally.
-_NOISY_SHUTDOWN_LOGGERS = ("uvicorn.error", "asyncio")
+#: Hosts a ManagedServer may bind to during local development/testing.
+#: Public 0.0.0.0 exposure requires the manual-gate-approved tunnel setup,
+#: never a direct bind here.
+_ALLOWED_LOCAL_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
-#: uvicorn's lifespan teardown runs in its own anyio task that finishes AFTER
-#: our server coroutine returns, so we hold the quiet window open for this many
-#: seconds to let that deferred teardown logging land inside it. Kept small so
-#: it adds only a negligible pause to an already-terminating process.
-_TEARDOWN_DRAIN_SECONDS = 0.3
+#: How long a graceful stop (should_exit) is given before escalating to a
+#: forced stop (force_exit).
+DEFAULT_GRACEFUL_TIMEOUT_SECONDS = 5.0
+
+#: How long a forced stop is given before the absolute last resort (cancel).
+DEFAULT_FORCED_TIMEOUT_SECONDS = 2.0
 
 
-class ShutdownController:
-    """A one-shot flag marking a cancellation as intentional.
+class ShutdownOutcome(enum.StrEnum):
+    """How a server's task actually ended, classified honestly."""
 
-    ``request()`` must be called immediately before cancelling the server task;
-    :func:`serve_until_shutdown` consults ``requested`` to decide whether a
-    ``CancelledError`` is the expected end of a clean shutdown or a genuine
-    fault that must propagate.
-    """
+    GRACEFUL = "graceful"
+    FORCED = "forced"
+    CANCELLED = "cancelled"
+    ALREADY_STOPPED = "already_stopped"
 
-    def __init__(self) -> None:
-        self._requested = False
 
-    def request(self) -> None:
-        """Mark that a shutdown of the associated server was deliberately asked for."""
-        self._requested = True
+@dataclass(slots=True)
+class ShutdownResult:
+    """The honest outcome of a :meth:`ManagedServer.stop` call."""
+
+    outcome: ShutdownOutcome
+    graceful_timed_out: bool = False
+    forced_timed_out: bool = False
 
     @property
-    def requested(self) -> bool:
-        """True once :meth:`request` has been called (never resets)."""
-        return self._requested
+    def exit_code(self) -> int:
+        """0 for a clean stop, 1 if forced/cancelled escalation was needed --
+        an honest signal that shutdown was not clean."""
+        clean = (ShutdownOutcome.GRACEFUL, ShutdownOutcome.ALREADY_STOPPED)
+        return 0 if self.outcome in clean else 1
 
 
-async def serve_until_shutdown(
-    mcp: FastMCP, host: str, port: int, controller: ShutdownController
-) -> None:
-    """Run the HTTP server until its task is cancelled.
+class ManagedServer:
+    """Owns one directly-built ``uvicorn.Server`` serving a FastMCP app's
+    real HTTP ASGI surface, so this peer can request a genuinely graceful
+    stop instead of relying on task cancellation."""
 
-    On cancellation: if ``controller.requested`` is set the shutdown was
-    intentional and we return silently; otherwise the cancellation was
-    unexpected and is re-raised so it is not mistaken for a clean stop.
-    """
-    try:
-        await mcp.run_http_async(host=host, port=port, show_banner=False, log_level="warning")
-    except asyncio.CancelledError:
-        if controller.requested:
-            return
-        raise
+    def __init__(self, mcp: FastMCP, host: str, port: int) -> None:
+        if host not in _ALLOWED_LOCAL_HOSTS:
+            raise ValueError(
+                f"refusing to bind to {host!r}: public network exposure requires "
+                "the manual-gate-approved tunnel setup, not a direct bind here"
+            )
+        app = mcp.http_app(transport="http")
+        config = uvicorn.Config(
+            app, host=host, port=port, log_level="warning", lifespan="on", ws="websockets-sansio"
+        )
+        self._server = uvicorn.Server(config)
+        self._task: asyncio.Task[None] | None = None
 
+    @classmethod
+    def _wrapping(cls, server: uvicorn.Server) -> ManagedServer:
+        """Test-only constructor wrapping an already-built ``uvicorn.Server``
+        (or a fake with the same ``started``/``should_exit``/``force_exit``/
+        ``serve()`` surface), bypassing the FastMCP app/host/port setup. Used
+        to deterministically exercise the graceful -> forced -> cancel
+        escalation ladder without needing a real multi-second hang."""
+        self = cls.__new__(cls)
+        self._server = server
+        self._task = None
+        return self
 
-@contextlib.contextmanager
-def _quiet_shutdown_loggers():
-    """Temporarily raise the noisy loggers to CRITICAL, then restore them.
+    @property
+    def port(self) -> int:
+        """The port this server is bound to (or will bind to once started)."""
+        return self._server.config.port
 
-    Scoped strictly to the intentional-cancel window so that the cosmetic
-    lifespan-teardown traceback is not printed, without hiding any error that
-    happens outside this narrow window.
-    """
-    previous: dict[str, int] = {}
-    for name in _NOISY_SHUTDOWN_LOGGERS:
-        logger = logging.getLogger(name)
-        previous[name] = logger.level
-        logger.setLevel(logging.CRITICAL)
-    try:
-        yield
-    finally:
-        for name, level in previous.items():
-            logging.getLogger(name).setLevel(level)
+    @property
+    def task(self) -> asyncio.Task[None]:
+        """The underlying server task (exposed for callers that need to await
+        or inspect it directly; an unexpected external cancellation of this
+        task is never swallowed by this class)."""
+        if self._task is None:
+            raise RuntimeError("ManagedServer.start() has not been called yet")
+        return self._task
 
+    async def start(self) -> None:
+        """Start serving; returns once actually listening. A genuine startup
+        failure (e.g. a bind error) surfaces immediately, never silently."""
+        self._task = asyncio.create_task(self._server.serve())
+        while not self._server.started and not self._task.done():
+            await asyncio.sleep(0.01)
+        if self._task.done():
+            self._task.result()
 
-def _ignore_expected_cancellation(loop: asyncio.AbstractEventLoop, context: dict) -> None:
-    """Loop exception handler used only during an intentional shutdown: drop a
-    bare ``CancelledError`` surfaced by uvicorn's lifespan teardown, delegate
-    anything else to the default handler so real faults still surface."""
-    if isinstance(context.get("exception"), asyncio.CancelledError):
-        return
-    loop.default_exception_handler(context)
+    async def stop(
+        self,
+        *,
+        graceful_timeout: float = DEFAULT_GRACEFUL_TIMEOUT_SECONDS,
+        forced_timeout: float = DEFAULT_FORCED_TIMEOUT_SECONDS,
+    ) -> ShutdownResult:
+        """Request a graceful stop; escalate to forced, then cancel, only if
+        each stage fails to finish within its bounded timeout. Every path
+        actually waits for the task to finish, so this never returns before
+        the listening socket is closed (or before honestly reporting that
+        cancellation was required)."""
+        if self._task is None or self._task.done():
+            return ShutdownResult(ShutdownOutcome.ALREADY_STOPPED)
 
+        self._server.should_exit = True
+        if await self._await_bounded(graceful_timeout):
+            return ShutdownResult(ShutdownOutcome.GRACEFUL)
 
-async def _drain_lingering_server_tasks() -> None:
-    """Cancel and await every other task still pending on the loop.
+        self._server.force_exit = True
+        if await self._await_bounded(forced_timeout):
+            return ShutdownResult(ShutdownOutcome.FORCED, graceful_timed_out=True)
 
-    uvicorn leaves internal lifespan/anyio tasks running after our server
-    coroutine returns; if left alone they are finalized (and logged) later by
-    ``asyncio.run``'s own teardown, OUTSIDE our quiet window. Draining them here
-    keeps that teardown noise inside the window. ``stop_server`` is only called
-    as the terminal shutdown of this peer, so no legitimate concurrent work is
-    lost by this drain.
-    """
-    others = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
-    for pending in others:
-        pending.cancel()
-    if others:
-        await asyncio.wait(others, timeout=_TEARDOWN_DRAIN_SECONDS)
+        self._task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await self._task
+        return ShutdownResult(
+            ShutdownOutcome.CANCELLED, graceful_timed_out=True, forced_timed_out=True
+        )
 
-
-async def stop_server(task: asyncio.Task, controller: ShutdownController) -> None:
-    """Request, then perform, a clean shutdown of a running server task.
-
-    Sets the intentional-shutdown flag, quiets the cosmetic teardown loggers,
-    installs a scoped loop exception handler that ignores the expected
-    ``CancelledError``, cancels the server task, and drains any lingering
-    uvicorn teardown tasks so their logging stays inside the quiet window. The
-    process is left able to exit with status 0.
-    """
-    controller.request()
-    loop = asyncio.get_running_loop()
-    previous_handler = loop.get_exception_handler()
-    loop.set_exception_handler(_ignore_expected_cancellation)
-    try:
-        with _quiet_shutdown_loggers():
-            task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
-            await _drain_lingering_server_tasks()
-    finally:
-        loop.set_exception_handler(previous_handler)
+    async def _await_bounded(self, timeout: float) -> bool:
+        """True if the server task finished within `timeout`. Uses `shield`
+        so a timeout here does NOT cancel the underlying task -- it keeps
+        running so the next escalation stage can still act on it."""
+        try:
+            await asyncio.wait_for(asyncio.shield(self._task), timeout=timeout)
+            return True
+        except TimeoutError:
+            return False

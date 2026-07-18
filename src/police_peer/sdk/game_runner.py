@@ -11,7 +11,6 @@ by tests against in-process fakes.
 
 from __future__ import annotations
 
-import asyncio
 import json
 from pathlib import Path
 
@@ -20,12 +19,9 @@ from police_peer.domain.roles import Role
 from police_peer.domain.state_machine import PeerStateMachine
 from police_peer.infrastructure.http_transport import HttpOpponentTransport
 from police_peer.infrastructure.mcp_server import build_peer_server
-from police_peer.infrastructure.server_lifecycle import (
-    ShutdownController,
-    serve_until_shutdown,
-    stop_server,
-)
+from police_peer.infrastructure.server_lifecycle import ManagedServer
 from police_peer.services.game_ids import derive_game_id, derive_game_uid
+from police_peer.services.series_artifacts import write_series_artifacts
 from police_peer.services.series_runtime import run_series
 from police_peer.services.subgame_runtime import run_single_subgame
 from police_peer.shared.config_loader import load_private_config, load_shared_config, sha256_hex
@@ -43,10 +39,9 @@ def _load(config_dir: Path):
 
 async def _serve(role: Role, config_sha: str, game_uid: str, machine: PeerStateMachine, port: int):
     mcp, inbox = build_peer_server(role, config_sha, game_uid=game_uid, machine=machine)
-    controller = ShutdownController()
-    task = asyncio.create_task(serve_until_shutdown(mcp, "127.0.0.1", port, controller))
-    await asyncio.sleep(0.4)
-    return task, controller, inbox
+    server = ManagedServer(mcp, "127.0.0.1", port)
+    await server.start()
+    return server, inbox
 
 
 async def run_subgame_headless(
@@ -59,7 +54,7 @@ async def run_subgame_headless(
     """Run one sub-game against a live opponent server; return a JSON-safe summary."""
     shared, private, config_sha, game_id, game_uid = _load(config_dir)
     machine = PeerStateMachine()
-    task, controller, inbox = await _serve(
+    server, inbox = await _serve(
         Role.POLICE, config_sha, game_uid, machine, private.network.my_port
     )
     transport = HttpOpponentTransport(
@@ -74,7 +69,7 @@ async def run_subgame_headless(
             shared, private, transport, game_uid=game_uid, config_sha256=config_sha, machine=machine
         )
     finally:
-        await stop_server(task, controller)
+        await server.stop()
     return {
         "mode": "run-subgame",
         "game_id": game_id,
@@ -93,14 +88,22 @@ async def run_series_headless(
     *,
     poll_interval: float = 0.1,
     max_polls: int = 300,
+    artifacts_dir: Path | None = None,
 ) -> dict:
-    """Run a full (or --smoke single) series against a live opponent server."""
+    """Run a full (or --smoke single) series against a live opponent server.
+
+    When `artifacts_dir` is given, writes the four standardized JSON
+    artifacts (declaration, one config + log per sub-game actually played,
+    result) via `series_artifacts.write_series_artifacts` -- reflecting
+    exactly what happened, including a series that ended early on a
+    technical loss.
+    """
     shared, private, config_sha, game_id, game_uid = _load(config_dir)
     num_games = 1 if smoke else None
     if smoke:
         print("SMOKE TEST ONLY: running a single sub-game, not the full 6-game series.")
     machine = PeerStateMachine()
-    task, controller, inbox = await _serve(
+    server, inbox = await _serve(
         Role.POLICE, config_sha, game_uid, machine, private.network.my_port
     )
 
@@ -124,7 +127,13 @@ async def run_series_headless(
             machine=machine,
         )
     finally:
-        await stop_server(task, controller)
+        await server.stop()
+    written_artifacts: list[str] = []
+    if artifacts_dir is not None:
+        paths = write_series_artifacts(
+            artifacts_dir, config_dir, private, game_id, game_uid, config_sha, series
+        )
+        written_artifacts = [str(p) for p in paths]
     return {
         "mode": "run-series",
         "game_id": game_id,
@@ -135,6 +144,7 @@ async def run_series_headless(
         "thief_total": series.agreement.thief_total,
         "terminated_reason": series.terminated_reason,
         "final_state": series.final_state.value,
+        "artifacts_written": written_artifacts,
     }
 
 

@@ -150,3 +150,15 @@ def test_missing_artifacts_reported(tmp_path) -> None:
     report = verify_replay(tmp_path)  # empty dir
     assert report.ok is False
     assert "missing required artifacts" in report.findings[0]
+
+
+def test_duplicate_sub_game_number_is_detected(tmp_path) -> None:
+    """A log file relabeled to claim ANOTHER sub-game's number (while a
+    different log silently goes missing in its place) must not slip past as
+    if nothing happened -- regression for a gap where a naive
+    number-keyed dict lookup would silently keep only the last one."""
+    _write_bundle(tmp_path)
+    _tamper(tmp_path, log_filename(GID, 2), lambda d: d.__setitem__("sub_game_number", 1))
+    report = verify_replay(tmp_path)
+    assert report.ok is False
+    assert any("duplicate sub_game_number" in f for f in report.findings)

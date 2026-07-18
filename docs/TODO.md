@@ -41,3 +41,22 @@ phases, run a real two-process series, or advance readiness past
 has not been re-audited phase-by-phase against the uncommitted Batch 2 work
 in this recovery step — that re-audit is Recovery Step B+ work, not this
 step.
+
+## Session recovery step B (this session)
+
+Fixed the production FastMCP/Uvicorn shutdown defect step A found but left
+unfixed in production code (see `CHANGELOG.md`). Independently verified
+Phases 10-12 against `protocol_contract.md`/`requirements_matrix.md`: the
+series runtime and artifact model/save layer were already
+COMPLETE_AND_VERIFIED; two genuine defects were found and fixed (artifact
+generation not wired into `run-series`, and a duplicate-sub-game-number gap
+in the replay verifier) — see `integration_lab/evidence/
+session_recovery_step_b/police_phase_10_12/`. Still not implemented or
+integration-tested: a real two-process series with an actual Thief
+opponent, the mutual cross-repo audit, GUI, replay viewer (Phase 10 in this
+table), Gmail (Phase 12 in this table), public network/league play (Phase
+15), or advanced strategy (`BeliefCutoffPoliceBrain`, Phase 7). The phase
+table's numbering above predates Batch 2 and does not line up 1:1 with the
+Batch-2 phase numbers used in `integration_lab/audit/PROGRESS.md` and the
+CHANGELOG — treat the table above as historical (Batch 1) and the CHANGELOG
++ PROGRESS.md as the current source of truth for Batch 2 status.

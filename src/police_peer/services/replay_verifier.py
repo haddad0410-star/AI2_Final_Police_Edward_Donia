@@ -52,6 +52,18 @@ def _check_counts(bundle: ReplayBundle, findings: list[str]) -> None:
         )
 
 
+def _check_no_duplicate_sub_games(bundle: ReplayBundle, findings: list[str]) -> None:
+    """Two files with different names can still both claim the SAME
+    ``sub_game_number`` internally; a naive dict-keyed lookup would silently
+    keep only the last one. Reject that outright rather than silently
+    dropping a record."""
+    for label, items in (("config", bundle.configs), ("log", bundle.logs)):
+        numbers = [item.get("sub_game_number") for item in items]
+        duplicates = {n for n in numbers if numbers.count(n) > 1}
+        if duplicates:
+            findings.append(f"duplicate sub_game_number in {label} artifacts: {sorted(duplicates)}")
+
+
 def _check_step_counts(bundle: ReplayBundle, findings: list[str]) -> None:
     """A log missing a step (declared by the result) means a record was dropped."""
     logs_by_number = {log.get("sub_game_number"): log for log in bundle.logs}
@@ -77,6 +89,7 @@ def verify_replay(directory: Path) -> ReplayReport:
     _check_game_uid(bundle, findings)
     _check_config_hashes(bundle, findings)
     _check_counts(bundle, findings)
+    _check_no_duplicate_sub_games(bundle, findings)
     _check_step_counts(bundle, findings)
 
     grid_size = bundle.configs[0]["terms"]["board_and_agents"]["grid_size"]

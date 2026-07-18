@@ -1,10 +1,16 @@
 # AI2 Final Project — Police Peer (police_peer)
 
-**Status: Implementation Batch 1.** Configuration, domain models, board physics,
-scent/belief models, protocol schemas, and a minimal real FastMCP HTTP vertical slice
-(health/negotiate/config-hash-compare) are implemented and tested — see "What's
-actually implemented" below. The full turn-by-turn game loop, strategy, cryptographic
-lifecycle, GUI, replay, and Gmail reporting are **not** implemented yet.
+**Status: Implementation Batch 2, session recovery step B.** Configuration,
+domain models, board physics, scent/belief models, protocol schemas, the
+minimal real FastMCP HTTP vertical slice, the commit-reveal crypto lifecycle,
+Step-0 declaration, state machine, deadline tracker/watchdog, baseline
+strategy brain, template hints, sub-game runtime, series runtime, JSON
+artifact generation (now wired into the CLI), and the headless replay
+verifier are implemented and tested — see "What's actually implemented"
+below. A real two-process game/series, the mutual cross-repo audit, the
+`BeliefCutoffPoliceBrain` original strategy, GUI, and Gmail reporting are
+**not** implemented/run yet. Readiness remains below `LOCAL_READY` — see
+`integration_lab/audit/PROGRESS.md`.
 
 ## Abstract
 
@@ -47,13 +53,25 @@ shared protocol contract only (see `docs/PROTOCOL.md`).
 - **Minimal real FastMCP HTTP vertical slice**: `health`/`negotiate`/`propose_config`
   tools, proven over an actual two-independent-process HTTP handshake — evidence in
   `integration_lab/evidence/negotiation_smoke/`.
-- 100 tests, 94.43% coverage, 0 Ruff violations, every file ≤150 meaningful lines.
+- **Batch 2 (verified in session recovery steps A/B)**: commit-reveal
+  crypto, Step-0 declaration, state machine, deadline tracker + watchdog,
+  extended FastMCP turn protocol, baseline strategy brain, template hints,
+  sub-game runtime (Phase 9), six-sub-game series runtime (Phase 10), JSON
+  artifact generation now wired into `run-series --artifacts-dir` (Phase
+  11), and the headless replay verifier (`verify-replay`, Phase 12). A
+  genuine production shutdown defect (task-cancellation not closing the
+  Uvicorn listening socket) was found and fixed — see `CHANGELOG.md`.
+- 257 tests, 96.23% coverage, 0 Ruff violations, every file ≤150 meaningful
+  lines (session recovery step B; see `integration_lab/evidence/
+  session_recovery_step_b/quality/`).
 
 ## What's not implemented yet
 
-A game engine that actually plays a sub-game, strategy logic, the full commit-reveal/
-audit lifecycle, a state machine, GUI, replay viewer, or Gmail reporter. Those are
-later batches, after this batch is reviewed and approved.
+`BeliefCutoffPoliceBrain` (the original candidate strategy — only the
+from-scratch baseline exists), a live GUI, a visual replay *viewer* (the
+headless verifier exists), Gmail reporting, a real two-process game/series
+against an actual opponent, the mutual cross-repo audit, public network
+exposure, and league play.
 
 ## Problem formulation
 

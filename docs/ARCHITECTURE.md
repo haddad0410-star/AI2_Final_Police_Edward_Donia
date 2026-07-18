@@ -30,6 +30,19 @@ verify_isolation_output.json`).
 
 ## State machine
 
-See `docs/PLAN.md`. Not implemented yet — Batch 1 only proves a real two-process
-FastMCP HTTP handshake (health/negotiate/config-hash-compare/ack/shutdown); the
-full turn-by-turn state machine lives in `services/` in a later batch.
+See `docs/PLAN.md`. Batch 1 proved only the two-process FastMCP HTTP
+handshake; the full turn-by-turn state machine (`domain/state_machine/`),
+sub-game runtime (`services/subgame_runtime.py`), series runtime
+(`services/series_runtime.py`), artifact writer (`services/
+series_artifacts.py`), and replay verifier (`services/replay_verifier.py`)
+were added in Batch 2 and independently verified in session recovery step B
+(`integration_lab/evidence/session_recovery_step_b/police_phase_10_12/`).
+
+## Server lifecycle (session recovery step B)
+
+`infrastructure/server_lifecycle.py::ManagedServer` owns a directly-built
+`uvicorn.Server` for this peer's FastMCP HTTP app, so production code can
+request a genuinely graceful stop instead of task cancellation (which does
+not reliably close the listening socket — see the CHANGELOG entry and
+`integration_lab/evidence/session_recovery_step_b/server_lifecycle/`).
+`sdk/negotiation_runner.py` and `sdk/game_runner.py` both use it.

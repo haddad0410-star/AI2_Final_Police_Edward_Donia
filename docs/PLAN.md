@@ -118,8 +118,11 @@ See `docs/SECURITY.md` and `integration_lab/audit/risk_register.md`.
 
 ## Failure/recovery model
 
-DeadlineTracker + Watchdog (book Ch.8.4); see `docs/ARCHITECTURE.md`. Not implemented
-yet.
+DeadlineTracker + Watchdog (book Ch.8.4); see `docs/ARCHITECTURE.md`.
+Implemented and tested (Batch 2: `domain/deadline.py`, `domain/watchdog.py`).
+Production server shutdown (a related but distinct concern -- releasing the
+HTTP listening socket cleanly) was hardened in session recovery step B; see
+`infrastructure/server_lifecycle.py` and the CHANGELOG.
 
 ## Data schemas
 

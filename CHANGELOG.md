@@ -5,6 +5,41 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed — Session recovery step B
+
+- `infrastructure/server_lifecycle.py` — production HTTP shutdown still used
+  raw `asyncio.Task.cancel()` after step A's test-only fix; direct
+  experiment confirmed this never reaches `uvicorn.Server.shutdown()` (no
+  `try/finally` around it in uvicorn's own `_serve()`), permanently leaking
+  the listening socket. Rewritten around a new `ManagedServer` class: a
+  directly-built `uvicorn.Server` gives production code a real handle to
+  request a graceful stop (`should_exit`), escalate to a forced stop
+  (`force_exit`) on a bounded timeout, and cancel only as a last resort —
+  every outcome honestly classified via `ShutdownOutcome`/`ShutdownResult`.
+  Refuses to bind to any host other than `127.0.0.1`/`localhost`/`::1`.
+  `sdk/negotiation_runner.py` and `sdk/game_runner.py` updated to the new
+  API; the old `ShutdownController`/`serve_until_shutdown`/`stop_server` API
+  removed entirely. 11 new regression tests
+  (`tests/integration/test_server_lifecycle.py`). See
+  `integration_lab/evidence/session_recovery_step_b/server_lifecycle/`.
+- `services/series_artifacts.py` (new) — artifact generation (Phase 11)
+  existed and was unit-tested in isolation but was never called from
+  `run_series_headless`/the CLI; a real `run-series` invocation produced no
+  artifact files. Wired via a new `artifacts_dir` parameter and
+  `run-series --artifacts-dir` CLI flag.
+- `domain/declaration.py` — `PeerDeclaration` did not implement `validate()`,
+  which the artifact-save layer requires; the first real attempt to save a
+  declaration artifact raised `AttributeError`. Added `validate()` and a
+  `to_dict()` alias.
+- `services/replay_verifier.py` — could not detect a duplicate/relabeled
+  sub-game record (a number-keyed dict lookup silently kept only the last
+  one); added `_check_no_duplicate_sub_games` + a regression test.
+
+See `integration_lab/evidence/session_recovery_step_b/police_phase_10_12/`
+for the full verification writeup (series runtime and artifact
+model/save layer were independently confirmed COMPLETE_AND_VERIFIED; the
+above two items were the only genuine defects found).
+
 ### Fixed — Session recovery step A
 
 - `tests/integration/test_game_runner_http.py` — both tests pointed

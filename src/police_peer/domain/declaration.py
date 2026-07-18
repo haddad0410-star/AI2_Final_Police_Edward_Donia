@@ -17,6 +17,7 @@ from typing import Any
 
 from police_peer.domain.hardware_probe import HardwareInfo, probe_hardware
 from police_peer.shared.canonical_json import canonical_sha256_hex
+from police_peer.shared.errors import SchemaValidationError
 
 SCHEMA_VERSION = "declaration/1"
 
@@ -74,6 +75,15 @@ class PeerDeclaration:
             "gpu_status": hw.gpu_status,
             "python_version": hw.python_version,
         }
+
+    def validate(self) -> None:
+        """Self-consistency check before this declaration is saved as the
+        declaration_<game_id>.json artifact (Phase 11) -- mirrors the other
+        three artifact models' minimal ``validate()`` contract."""
+        if not self.group_id or not self.group_name:
+            raise SchemaValidationError("declaration needs group_id and group_name")
+        if len(self.shared_config_sha256) != 64:
+            raise SchemaValidationError("shared_config_sha256 must be a 64-char digest")
 
 
 @dataclass(frozen=True, slots=True)

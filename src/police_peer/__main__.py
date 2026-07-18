@@ -44,8 +44,11 @@ def _run_subgame(args: argparse.Namespace) -> int:
 
 
 def _run_series(args: argparse.Namespace) -> int:
+    artifacts_dir = Path(args.artifacts_dir) if args.artifacts_dir else None
     summary = asyncio.run(
-        run_series_headless(Path(args.config_dir), args.opponent_url, smoke=args.smoke)
+        run_series_headless(
+            Path(args.config_dir), args.opponent_url, smoke=args.smoke, artifacts_dir=artifacts_dir
+        )
     )
     print_summary(summary)
     return summary_exit_code(summary)
@@ -75,6 +78,9 @@ def _build_parser() -> argparse.ArgumentParser:
     series.add_argument("--smoke", action="store_true", help="single-game SMOKE TEST ONLY")
     series.add_argument("--config-dir", default=str(CONFIG_DIR))
     series.add_argument("--opponent-url", default=default_url)
+    series.add_argument(
+        "--artifacts-dir", default=None, help="write the 4 standardized JSON artifacts here"
+    )
 
     verify = subparsers.add_parser("verify-replay", help="Verify an artifact directory")
     verify.add_argument("--artifacts", required=True, help="directory of JSON artifacts")
