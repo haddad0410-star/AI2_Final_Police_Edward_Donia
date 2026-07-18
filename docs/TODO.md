@@ -27,6 +27,23 @@
 Do not mark a task DONE before its evidence file exists — see `CLAUDE.md`'s
 no-fabricated-evidence rule.
 
+## Session recovery step C (this session)
+
+Resolved the declaration schema divergence (risk #14, canonical
+`declaration/2`); verified all four artifact contracts compatible; ran a
+real FastMCP lifecycle regression (3x); ran a REAL one-sub-game two-process
+HTTP game (Phase 4/14 in the table above, first real cross-process game);
+ran a real six-sub-game two-process HTTP series (Phase 14); ran the mutual
+cross-repo audit (96/96 checks passed); ran 18 bounded failure drills (Phase
+9); ran full quality/security/reproducibility gates (Phase 13). Six real
+cross-repo protocol defects found and fixed only by actually running two
+independent processes — see `CHANGELOG.md` and
+`integration_lab/audit/risk_register.md` risks #15-#16. Phases 4 (remainder),
+9, 11, 13, 14 in the table above should now be read as DONE per this step's
+evidence (`integration_lab/evidence/session_recovery_step_c/`); the table
+itself predates Batch 2/step C numbering — treat `PROGRESS.md` as the
+current source of truth. Readiness: `LOCAL_READY`.
+
 ## Session recovery step A (this session)
 
 The Batch 2 background agent for this repo was killed mid-run by

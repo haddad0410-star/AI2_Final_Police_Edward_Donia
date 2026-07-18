@@ -69,18 +69,23 @@ class PeerInbox:
         self._seen_turn_keys[key] = payload
 
     # -- per-sender sequence monotonicity ------------------------------------
-    def sequence_status(self, sender: str, sequence_id: int) -> str:
-        """Classify a sequence id as ok / stale (rewind) / skipped (gap)."""
-        expected = self._next_seq.get(sender, 0)
+    def sequence_status(self, sender: str, sub_game_number: int, sequence_id: int) -> str:
+        """Classify a sequence id as ok / stale (rewind) / skipped (gap).
+
+        Scoped per ``(sub_game_number, sender)`` -- each sub-game is a fresh
+        cryptographic/sequential context (a new series sub-game legitimately
+        restarts ``sequence_id`` at 0), matching the per-sub-game cursor the
+        opponent's own receiving sequence tracker already uses."""
+        expected = self._next_seq.get((sub_game_number, sender), 0)
         if sequence_id < expected:
             return SEQ_STALE
         if sequence_id > expected:
             return SEQ_SKIPPED
         return SEQ_OK
 
-    def advance_sequence(self, sender: str, sequence_id: int) -> None:
-        """Advance the expected next sequence id for ``sender``."""
-        self._next_seq[sender] = sequence_id + 1
+    def advance_sequence(self, sender: str, sub_game_number: int, sequence_id: int) -> None:
+        """Advance the expected next sequence id for ``(sub_game_number, sender)``."""
+        self._next_seq[(sub_game_number, sender)] = sequence_id + 1
 
     # -- enqueue helpers ------------------------------------------------------
     def enqueue_turn(self, item: dict[str, Any]) -> None:

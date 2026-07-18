@@ -1,16 +1,19 @@
 # AI2 Final Project — Police Peer (police_peer)
 
-**Status: Implementation Batch 2, session recovery step B.** Configuration,
-domain models, board physics, scent/belief models, protocol schemas, the
-minimal real FastMCP HTTP vertical slice, the commit-reveal crypto lifecycle,
-Step-0 declaration, state machine, deadline tracker/watchdog, baseline
-strategy brain, template hints, sub-game runtime, series runtime, JSON
-artifact generation (now wired into the CLI), and the headless replay
-verifier are implemented and tested — see "What's actually implemented"
-below. A real two-process game/series, the mutual cross-repo audit, the
-`BeliefCutoffPoliceBrain` original strategy, GUI, and Gmail reporting are
-**not** implemented/run yet. Readiness remains below `LOCAL_READY` — see
-`integration_lab/audit/PROGRESS.md`.
+**Status: session recovery step C.** Everything from session recovery step B
+plus: the canonical `declaration/2` Step-0 schema (risk #14, resolved), a
+real 3x FastMCP lifecycle regression, a real one-sub-game two-process HTTP
+game (`survival`, both sides' independently-written artifacts byte-matching,
+both replay verifiers `VERIFIED`), a real six-sub-game two-process series
+(6/6 sub-games, both replay verifiers `VERIFIED`, mutual artifact comparison
+96/96 checks passed), an independent tamper-detection check, all 18 bounded
+failure drills passing, and full quality/security gates. Six real,
+previously-undiscovered cross-repo protocol/wiring defects were found and
+fixed this step (risks #15-#16) — see `CHANGELOG.md` and
+`integration_lab/audit/risk_register.md`. The `BeliefCutoffPoliceBrain`
+original strategy, GUI, Gmail reporting, public network exposure, and league
+play are **not** implemented/run yet. Readiness: see
+`integration_lab/audit/PROGRESS.md` for the current level.
 
 ## Abstract
 
@@ -61,17 +64,32 @@ shared protocol contract only (see `docs/PROTOCOL.md`).
   11), and the headless replay verifier (`verify-replay`, Phase 12). A
   genuine production shutdown defect (task-cancellation not closing the
   Uvicorn listening socket) was found and fixed — see `CHANGELOG.md`.
-- 257 tests, 96.23% coverage, 0 Ruff violations, every file ≤150 meaningful
-  lines (session recovery step B; see `integration_lab/evidence/
-  session_recovery_step_b/quality/`).
+- 270 tests, 96.15% coverage, 0 Ruff violations, every file ≤150 meaningful
+  lines (session recovery step C; see `integration_lab/evidence/
+  session_recovery_step_c/quality/`).
+
+## Session recovery step C (new)
+
+Canonical `declaration/2` schema frozen and verified byte-identical to the
+Thief repo's (risk #14, resolved). Real cross-process HTTP validated for the
+first time: a 3x FastMCP lifecycle regression, a real one-sub-game series
+(`survival`, winner thief, 35 steps, both replay verifiers `VERIFIED`), a
+real six-sub-game series (6/6 games, mutual comparison 96/96 checks passed),
+an independent tamper-detection check, and all 18 bounded failure drills —
+all genuinely passing. Fixed 6 real defects found only by actually running
+two independent processes against each other for the first time (sequence
+numbering, reveal wire shape/delivery model, envelope field mismatch,
+per-sub-game sequence scoping, inbox message accumulation) — see
+`CHANGELOG.md` and `integration_lab/audit/risk_register.md` risks #15-#16.
+Full evidence: `integration_lab/evidence/session_recovery_step_c/`.
 
 ## What's not implemented yet
 
 `BeliefCutoffPoliceBrain` (the original candidate strategy — only the
 from-scratch baseline exists), a live GUI, a visual replay *viewer* (the
-headless verifier exists), Gmail reporting, a real two-process game/series
-against an actual opponent, the mutual cross-repo audit, public network
-exposure, and league play.
+headless verifier exists), Gmail reporting, public network exposure, and
+league play. A real two-process game/series and the mutual cross-repo audit
+**are now implemented and verified** (session recovery step C) — see above.
 
 ## Problem formulation
 
@@ -147,5 +165,6 @@ classification: `integration_lab/audit/reference_reuse_plan.md`.
 ## Submission tag
 
 Not yet tagged. Will be `v1.0-submission` once `SUBMISSION_READY` (see
-`integration_lab/audit/PROGRESS.md` for current readiness level, which remains below
-`LOCAL_READY` as of this scaffold).
+`integration_lab/audit/PROGRESS.md` for current readiness level — `LOCAL_READY`
+as of session recovery step C; `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY`
+not yet reached).

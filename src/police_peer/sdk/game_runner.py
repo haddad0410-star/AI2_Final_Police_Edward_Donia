@@ -4,9 +4,11 @@ Wires config loading, this peer's own FastMCP server, the HTTP opponent
 transport, the sub-game/series runtimes, and artifact writing into two async
 entrypoints. Business logic lives here (not in ``__main__``) per CLAUDE.md.
 
-NOTE: the live cross-process path has not been validated in this task (no second
-peer is run here); see docs/LIMITATIONS.md. The runtimes it drives ARE covered
-by tests against in-process fakes.
+The live cross-process path was validated for real in session recovery step C
+(Task 5): two independent OS processes, real HTTP, real commit-reveal, ending
+in a genuine capture/survival/technical-loss outcome -- see
+integration_lab/evidence/session_recovery_step_c/one_subgame/. The runtimes
+it drives are also covered by tests against in-process fakes.
 """
 
 from __future__ import annotations

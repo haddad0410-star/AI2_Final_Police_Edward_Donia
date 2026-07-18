@@ -5,6 +5,30 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed — Session recovery step C
+
+- Declaration schema frozen as canonical, versioned `declaration/2`
+  (resolves `risk_register.md` risk #14). `domain/declaration.py` rewritten
+  and split (150-line cap) into `declaration.py` (dataclass/to_dict/
+  validate), `declaration_parsing.py` (`parse_declaration`, strict
+  allow-list, alias normalization), `declaration_builder.py`
+  (`DeclarationInputs`/`build_declaration`), `declaration_seal.py`
+  (seal/verify/nonce/mismatches, moved unchanged). `hardware_probe.py`'s
+  `HardwareInfo` gained `gpu_available`/`vram_gb`/`vram_status` (never
+  fabricated — `None` + explanatory status when unavailable). New
+  `content_sha256` commitment field. `services/series_artifacts.py` updated
+  to the new `DeclarationInputs` call site. `declaration/1`-era aliases
+  (`commit_hash`, `config_sha256`) accepted on input only, normalized,
+  rejected if ambiguous. Canonical JSON Schema published at
+  `docs/schemas/declaration.schema.json`, byte-identical (SHA-256
+  `a995d657e81ed920f87f3ef39c3281550d346f38c18468cf7fdee79cd42a97bd`) to the
+  independently-built Thief repo's copy; cross-repo fixture equivalence
+  verified by `integration_lab/scripts/compare_declaration_schemas.py`.
+  23 tests in `tests/unit/test_declaration.py` (was a smaller set pre-step-C).
+  257 -> 270 tests, both Ruff/format clean. See
+  `integration_lab/evidence/session_recovery_step_c/task2_declaration_schema/`
+  and `.../declaration_schema_audit.md`.
+
 ### Fixed — Session recovery step B
 
 - `infrastructure/server_lifecycle.py` — production HTTP shutdown still used

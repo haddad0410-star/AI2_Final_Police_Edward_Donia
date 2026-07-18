@@ -31,8 +31,9 @@ from police_peer.services.replay_verifier import verify_replay
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "config" / "police"
 
 
-def _negotiate_smoke() -> int:
-    summary = asyncio.run(run_negotiation_smoke(Role.POLICE, CONFIG_DIR))
+def _negotiate_smoke(args: argparse.Namespace) -> int:
+    config_dir = Path(args.config_dir) if args.config_dir else CONFIG_DIR
+    summary = asyncio.run(run_negotiation_smoke(Role.POLICE, config_dir))
     print(json.dumps(summary, indent=2))
     return 0 if summary.get("outcome") == "negotiated" else 1
 
@@ -65,7 +66,12 @@ def _verify_replay(args: argparse.Namespace) -> int:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="police_peer")
     subparsers = parser.add_subparsers(dest="command", required=True)
-    subparsers.add_parser("negotiate-smoke", help="Batch 1 minimal FastMCP negotiation slice")
+    negotiate = subparsers.add_parser(
+        "negotiate-smoke", help="Batch 1 minimal FastMCP negotiation slice"
+    )
+    negotiate.add_argument(
+        "--config-dir", default=None, help="override the default config/police directory"
+    )
 
     default_url = "http://127.0.0.1:8902/mcp"
     sub = subparsers.add_parser("run-subgame", help="Run one sub-game vs a live opponent")
@@ -90,7 +96,7 @@ def _build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = _build_parser().parse_args()
     if args.command == "negotiate-smoke":
-        sys.exit(_negotiate_smoke())
+        sys.exit(_negotiate_smoke(args))
     if args.command == "run-subgame":
         sys.exit(_run_subgame(args))
     if args.command == "run-series":

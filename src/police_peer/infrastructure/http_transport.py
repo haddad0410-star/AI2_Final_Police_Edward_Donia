@@ -6,9 +6,9 @@ opponent delivered into OUR bounded inbox. If the opponent is unreachable or no
 matching reveal arrives before a bounded number of polls, a
 :class:`TechnicalFailure` is returned rather than hanging.
 
-NOTE: this is the structural production seam. It has NOT been exercised against
-a live second peer in this task (see docs/LIMITATIONS.md); cross-process
-validation is a later, human-run step.
+Validated against a live second peer (the independently-built Thief repo) in
+session recovery step C, Task 5 -- see
+integration_lab/evidence/session_recovery_step_c/one_subgame/.
 """
 
 from __future__ import annotations
@@ -41,10 +41,21 @@ class HttpOpponentTransport:
     async def exchange_turn(
         self, commitment: dict, reveal: dict
     ) -> OpponentReveal | TechnicalFailure:
-        """Deliver our messages, then await the opponent's public reveal."""
+        """Deliver our messages, then await the opponent's public reveal.
+
+        A rejected ack (``ok: False`` -- malformed, wrong sequence, wrong
+        game_uid, ...) is a real protocol fault, not silently ignored: it
+        becomes an explicit ``TechnicalFailure`` immediately rather than
+        polling forever for a reveal the opponent never actually accepted
+        our commitment/reveal well enough to answer.
+        """
         try:
-            await call_receive_turn(self._url, commitment)
-            await call_receive_turn(self._url, reveal)
+            commit_ack = await call_receive_turn(self._url, commitment)
+            if not commit_ack.get("ok"):
+                return TechnicalFailure(f"opponent rejected our commitment: {commit_ack}")
+            reveal_ack = await call_receive_turn(self._url, reveal)
+            if not reveal_ack.get("ok"):
+                return TechnicalFailure(f"opponent rejected our reveal: {reveal_ack}")
         except PeerUnavailableError as exc:
             return TechnicalFailure(f"opponent unreachable: {exc}")
         return await self._await_opponent_reveal()
@@ -61,8 +72,29 @@ class HttpOpponentTransport:
         for index, message in enumerate(self._inbox.turn_messages):
             if message.get("message_type") == "reveal":
                 del self._inbox.turn_messages[index]
+                self._prune_consumed_commitment(message)
                 return message
         return None
+
+    def _prune_consumed_commitment(self, reveal_message: dict) -> None:
+        """A ``commitment`` is only needed until its matching ``reveal`` has
+        been consumed (its role was to bind the sequence check at receive
+        time); nothing ever pops it on its own, so across a multi-sub-game
+        series it would otherwise accumulate without bound and eventually
+        exhaust the bounded inbox's capacity (a real defect surfaced by
+        session recovery step C, Task 7's real six-sub-game series -- see
+        risk_register.md)."""
+        env = reveal_message.get("envelope", {})
+        for index, message in enumerate(self._inbox.turn_messages):
+            other = message.get("envelope", {})
+            if (
+                message.get("message_type") == "commitment"
+                and other.get("sub_game_number") == env.get("sub_game_number")
+                and other.get("step") == env.get("step")
+                and other.get("sender") == env.get("sender")
+            ):
+                del self._inbox.turn_messages[index]
+                return
 
     def _to_reveal(self, message: dict) -> OpponentReveal:
         body = message.get("reveal", {})

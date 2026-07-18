@@ -76,13 +76,15 @@ class TurnRouter:
             return _reject("WRONG_STATE", f"not accepting messages in {self.machine.state}")
         return None
 
-    def _check_duplicate_and_sequence(self, key: tuple, sender: str, seq: int, message: dict):
+    def _check_duplicate_and_sequence(
+        self, key: tuple, sender: str, sub_game_number: int, seq: int, message: dict
+    ):
         status = self.inbox.duplicate_status(key, message)
         if status == inbox_mod.CONFLICT:
             return _reject("CONFLICTING_DUPLICATE", f"different payload for {key}")
         if status == inbox_mod.IDENTICAL:
             return {"ok": True, "duplicate": True}
-        seq_status = self.inbox.sequence_status(sender, seq)
+        seq_status = self.inbox.sequence_status(sender, sub_game_number, seq)
         if seq_status == inbox_mod.SEQ_STALE:
             return _reject("STALE_SEQUENCE", f"sequence_id {seq} is stale")
         if seq_status == inbox_mod.SEQ_SKIPPED:
@@ -101,12 +103,13 @@ class TurnRouter:
             return _reject("QUEUE_FULL", "inbox capacity reached")
         env = message["envelope"]
         sender, seq = env["sender"], env["sequence_id"]
-        key = (env["sub_game_number"], env["step"], sender, message_type)
-        early = self._check_duplicate_and_sequence(key, sender, seq, message)
+        sub_game_number = env["sub_game_number"]
+        key = (sub_game_number, env["step"], sender, message_type)
+        early = self._check_duplicate_and_sequence(key, sender, sub_game_number, seq, message)
         if early is not None:
             return early
         self.inbox.remember(key, message)
-        self.inbox.advance_sequence(sender, seq)
+        self.inbox.advance_sequence(sender, sub_game_number, seq)
         self.inbox.enqueue_turn(message)
         _LOG.info("accepted turn message_type=%s key=%s", message_type, key)
         return {"ok": True, "duplicate": False}
