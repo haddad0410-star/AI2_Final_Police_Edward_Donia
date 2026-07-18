@@ -21,8 +21,10 @@ summarizes only what's specific to running this repo as the Police side.
   byte-identical in schema to the independently-built Thief repo's
   artifacts via serialized fixture comparison — see
   `integration_lab/evidence/session_recovery_step_b/feature_parity.md`.
-  (The Step-0 declaration schema is NOT yet cross-repo-compatible — see
-  `risk_register.md` risk #14.)
+  The Step-0 declaration schema is now frozen and cross-repo-compatible as
+  canonical `declaration/2` (session recovery step C, Task 2 — see
+  `docs/schemas/declaration.schema.json`, `protocol_contract.md` §3.4a, and
+  `risk_register.md` risk #14, now resolved).
 - Real two-process negotiation evidence: `integration_lab/evidence/negotiation_smoke/`
   (actual stdout/stderr/exit codes from two independently-launched OS processes).
   A real two-process full game/series has NOT been run yet (explicitly out

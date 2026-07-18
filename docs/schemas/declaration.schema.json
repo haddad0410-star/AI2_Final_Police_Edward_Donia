@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai2-final-p2p.local/schemas/declaration.schema.json",
+  "title": "Step-0 Peer Declaration",
+  "description": "Canonical, versioned schema for the declaration_<game_id>.json artifact (protocol_contract.md section 5). Frozen for cross-repository compatibility during session recovery step C, resolving risk #14. This file is a deliberately shared, byte-identical reference document -- like the shared binding game.json -- kept in both police_peer and thief_peer; it is not production source code and is not imported by either peer's production code.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "game_id",
+    "game_uid",
+    "role",
+    "group_id",
+    "group_name",
+    "members",
+    "police_repository",
+    "thief_repository",
+    "police_mcp_url",
+    "thief_mcp_url",
+    "timezone",
+    "timestamp",
+    "token_budget",
+    "num_sub_games",
+    "shared_config_sha256",
+    "code_version",
+    "git_commit",
+    "strategy_class",
+    "banter_provider",
+    "hardware",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "declaration/2",
+      "description": "Frozen canonical schema version. Bumped from declaration/1 during session recovery step C."
+    },
+    "game_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Appendix-F-derived series identifier, protocol_contract.md section 3.1."
+    },
+    "game_uid": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Appendix-F-derived stable UUID string, protocol_contract.md section 3.1."
+    },
+    "role": {
+      "type": "string",
+      "enum": ["police", "thief"],
+      "description": "Which peer authored this self-declaration."
+    },
+    "group_id": { "type": "string", "minLength": 1 },
+    "group_name": { "type": "string", "minLength": 1 },
+    "members": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "police_repository": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The Police repository URL. An explicit unresolved-local-development placeholder value is acceptable (e.g. a github.com URL for a repo not yet created/pushed) but the field itself must never be fabricated -- it must be exactly what the peer's own private configuration declares."
+    },
+    "thief_repository": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The Thief repository URL. Same placeholder-acceptable rule as police_repository."
+    },
+    "police_mcp_url": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Police's local MCP endpoint URL (127.0.0.1 only outside a manual-gate-approved public tunnel)."
+    },
+    "thief_mcp_url": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Thief's local MCP endpoint URL (127.0.0.1 only outside a manual-gate-approved public tunnel)."
+    },
+    "timezone": { "type": "string", "minLength": 1 },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 creation timestamp."
+    },
+    "token_budget": { "type": "integer", "minimum": 0 },
+    "num_sub_games": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The number of sub-games in the series this declaration covers (6 for the binding league series; 1 only in the explicitly-named smoke fixture)."
+    },
+    "shared_config_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of the raw, byte-identical shared game.json both peers hold."
+    },
+    "code_version": { "type": "string", "minLength": 1 },
+    "git_commit": {
+      "type": "string",
+      "minLength": 1,
+      "description": "This peer's own local git HEAD commit hash for this game (may change game-to-game; App.E rule 53)."
+    },
+    "strategy_class": { "type": "string", "minLength": 1 },
+    "banter_provider": { "type": "string", "minLength": 1 },
+    "hardware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operating_system",
+        "platform_detail",
+        "python_version",
+        "cpu_model",
+        "cpu_model_status",
+        "cpu_cores",
+        "ram_gb",
+        "ram_status",
+        "gpu_model",
+        "gpu_available",
+        "gpu_status",
+        "vram_gb",
+        "vram_status"
+      ],
+      "properties": {
+        "operating_system": { "type": "string" },
+        "platform_detail": { "type": "string" },
+        "python_version": { "type": "string" },
+        "cpu_model": { "type": ["string", "null"] },
+        "cpu_model_status": { "type": "string" },
+        "cpu_cores": { "type": ["integer", "null"] },
+        "ram_gb": { "type": ["number", "null"] },
+        "ram_status": { "type": "string" },
+        "gpu_model": { "type": ["string", "null"] },
+        "gpu_available": {
+          "type": "boolean",
+          "description": "Explicit availability flag -- never inferred solely from gpu_model being null."
+        },
+        "gpu_status": { "type": "string" },
+        "vram_gb": { "type": ["number", "null"] },
+        "vram_status": { "type": "string" }
+      }
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 over the canonical JSON of every OTHER field in this document -- a documented commitment representation, recomputable and comparable by the replay verifier. Not a substitute for the separate nonce-based Step-0 commit/reveal exchange (domain/declaration.py::seal_declaration), which remains unchanged."
+    }
+  }
+}

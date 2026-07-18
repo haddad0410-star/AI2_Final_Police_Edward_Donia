@@ -65,3 +65,21 @@ audit implementation is a later batch. This document will be updated again then.
   `integration_lab/evidence/session_recovery_step_b/police_phase_10_12/`.
   Still not done: a real cross-process tamper drill against an actual
   opponent, or the mutual audit.
+
+## Session recovery step C additions
+
+- **Declaration schema hardened (Task 2, resolves risk #14)**: the Step-0
+  declaration is now parsed via a strict allow-list (`declaration_parsing.py`
+  ::`parse_declaration`) — any unrecognized top-level or `hardware` field is
+  rejected outright (`SchemaValidationError`), never silently accepted.
+  `declaration/1`-era aliases (`commit_hash`, `config_sha256`) are accepted
+  on input only, normalized immediately, and rejected as ambiguous if
+  present alongside a differing canonical value — closing a path where a
+  malformed/legacy declaration could otherwise be misread. A new
+  `content_sha256` commitment field (`canonical_sha256_hex` over every other
+  field) gives the replay verifier an additional, independently-recomputable
+  integrity check beyond the existing nonce-based seal/verify exchange.
+  Cross-repo compatibility (not a security boundary by itself, but a
+  precondition for any real declaration exchange) verified by
+  `integration_lab/scripts/compare_declaration_schemas.py`; see
+  `integration_lab/evidence/session_recovery_step_c/task2_declaration_schema/`.

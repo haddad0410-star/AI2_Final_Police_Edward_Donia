@@ -17,18 +17,27 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class HardwareInfo:
-    """A snapshot of the local machine, with per-field availability status."""
+    """A snapshot of the local machine, with per-field availability status.
+
+    Field set frozen against `docs/schemas/declaration.schema.json`
+    (session recovery step C, resolving risk #14) -- byte-identical to the
+    Thief repo's `HardwareInfo`, including `vram_gb`/`vram_status`/
+    `gpu_available`, which this dataclass previously lacked.
+    """
 
     operating_system: str
     platform_detail: str
+    python_version: str
     cpu_model: str | None
     cpu_model_status: str
     cpu_cores: int | None
     ram_gb: float | None
     ram_status: str
     gpu_model: str | None
+    gpu_available: bool
     gpu_status: str
-    python_version: str
+    vram_gb: float | None
+    vram_status: str
 
 
 def _detect_cpu_model() -> tuple[str | None, str]:
@@ -78,12 +87,15 @@ def probe_hardware() -> HardwareInfo:
     return HardwareInfo(
         operating_system=platform.system(),
         platform_detail=platform.platform(),
+        python_version=sys.version.split()[0],
         cpu_model=cpu_model,
         cpu_model_status=cpu_status,
         cpu_cores=os.cpu_count(),
         ram_gb=ram_gb,
         ram_status=ram_status,
         gpu_model=None,
+        gpu_available=False,
         gpu_status="not detected: no reliable dependency-free GPU probe (value never invented)",
-        python_version=sys.version,
+        vram_gb=None,
+        vram_status="not detected: no reliable dependency-free VRAM probe (value never invented)",
     )

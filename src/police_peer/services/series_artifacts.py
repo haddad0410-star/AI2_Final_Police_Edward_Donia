@@ -17,7 +17,7 @@ import json
 from pathlib import Path
 
 from police_peer.domain.crypto import audit_records
-from police_peer.domain.declaration import DeclarationInputs, build_declaration
+from police_peer.domain.declaration_builder import DeclarationInputs, build_declaration
 from police_peer.domain.repo_metadata import code_version, git_commit_hash
 from police_peer.services.artifact_builders import (
     build_config_artifact,
@@ -53,20 +53,26 @@ def write_series_artifacts(
     commit = git_commit_hash(REPO_ROOT)
     written: list[Path] = []
 
+    league = terms.get("network_and_league", {})
     declaration = build_declaration(
         DeclarationInputs(
-            group_name=private.game.group_name,
+            role="police",
+            game_id=game_id,
+            game_uid=game_uid,
             group_id=private.game.group_id,
+            group_name=private.game.group_name,
             members=private.game.members,
-            repository=private.game.repos.get("police", ""),
+            police_repository=private.game.repos.get("police", "local-placeholder://police_peer"),
+            thief_repository=private.game.repos.get("thief", "local-placeholder://thief_peer"),
+            police_mcp_url=f"http://127.0.0.1:{private.network.my_port}/mcp",
+            thief_mcp_url=private.network.opponent_url,
+            token_budget=league.get("token_budget_per_series", 0),
+            num_sub_games=league.get("num_games", len(series.sub_games)),
+            shared_config_sha256=config_sha256,
             code_version=code_version(REPO_ROOT / "pyproject.toml"),
             git_commit=commit,
             strategy_class=private.strategy.police_class,
             banter_provider=private.trash_talk.provider,
-            token_budget=terms.get("network_and_league", {}).get("token_budget_per_series", 0),
-            shared_config_sha256=config_sha256,
-            game_id=game_id,
-            game_uid=game_uid,
         )
     )
     written.append(save_artifact(declaration, artifacts_dir / declaration_filename(game_id)))
