@@ -9,7 +9,6 @@ health/negotiate/config-hash-compare/ack/clean-shutdown. The full game loop
 from __future__ import annotations
 
 import asyncio
-import contextlib
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -20,7 +19,12 @@ from police_peer.infrastructure.mcp_client import (
     call_propose_config,
     wait_for_health,
 )
-from police_peer.infrastructure.mcp_server import build_peer_server, run_server_until_cancelled
+from police_peer.infrastructure.mcp_server import build_peer_server
+from police_peer.infrastructure.server_lifecycle import (
+    ShutdownController,
+    serve_until_shutdown,
+    stop_server,
+)
 from police_peer.shared.config_loader import load_private_config, load_shared_config, sha256_hex
 
 
@@ -53,8 +57,9 @@ async def run_negotiation_smoke(
     own_config_sha256 = sha256_hex(config_dir / shared_config_filename)
 
     mcp, inbox = build_peer_server(role, own_config_sha256)
+    controller = ShutdownController()
     server_task = asyncio.create_task(
-        run_server_until_cancelled(mcp, "127.0.0.1", private.network.my_port)
+        serve_until_shutdown(mcp, "127.0.0.1", private.network.my_port, controller)
     )
     await asyncio.sleep(startup_grace_seconds)
 
@@ -95,9 +100,7 @@ async def run_negotiation_smoke(
         await asyncio.sleep(post_negotiation_linger_seconds)
         summary["received_declarations"] = inbox.declarations.qsize()
         summary["received_proposals"] = inbox.proposals.qsize()
-        server_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await server_task
+        await stop_server(server_task, controller)
         summary["ended_at"] = _now_iso()
 
     return summary

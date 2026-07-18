@@ -5,6 +5,32 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed — Session recovery step A
+
+- `tests/integration/test_game_runner_http.py` — both tests pointed
+  `run_subgame_headless`/`run_series_headless` at the real, shared
+  `config/police/game.toml`, whose hardcoded `my_port = 8901` both tests'
+  own internal server tried to bind, causing `OSError: address already in
+  use` (surfaced as `SystemExit: 3` from uvicorn's `Server.startup()`).
+  Investigating why the first test's server didn't free the port for the
+  second surfaced a deeper finding: cancelling the `asyncio.Task` wrapping
+  `FastMCP.run_http_async(...)` (the shutdown pattern used everywhere in
+  this codebase, including production `infrastructure/server_lifecycle.py`)
+  never actually closes the underlying listening socket — `uvicorn.Server
+  ._serve()` only reaches its socket-closing `shutdown()` when its polling
+  `main_loop()` returns normally after observing `should_exit`; there is no
+  `try/finally` around it, so a raw cancel skips it, permanently leaking the
+  socket for the rest of the process (verified by direct experiment, not a
+  timing race).
+  New `tests/_port_utils.py` gives every test that starts a real server a
+  dynamically allocated free port, a private per-test copy of the real
+  config with only the port substituted, and a genuinely graceful
+  start/stop built on a directly-owned `uvicorn.Server`
+  (`should_exit = True`, not task cancellation) — verified to actually
+  release the port afterward. No production code was changed; this is
+  entirely a test-infrastructure fix. See `integration_lab/evidence/
+  session_recovery_step_a/police_port_fix/root_cause_and_fix.md`.
+
 ### Added — Implementation Batch 1
 - Configuration: `shared/{errors,config_sections,config_validation,config_models,
   private_config,rate_limits_model,config_loader,canonical_json}.py` — loads and

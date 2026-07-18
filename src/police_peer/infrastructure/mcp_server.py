@@ -1,46 +1,49 @@
-"""Minimal real FastMCP HTTP server for this peer -- health, negotiate, and
-config-hash comparison only. The full game-loop tool surface (receive_turn,
-submit_audit, receive_control) is a later batch (see docs/PROTOCOL.md and
-ADR-0012 on the receive_move alias).
+"""Real FastMCP HTTP server for this peer.
 
-Idempotency policy: a repeated message with the SAME correlation_id and THE
-SAME payload is accepted again (idempotent replay); the same correlation_id
-with a DIFFERENT payload is rejected as a conflicting duplicate.
+Batch 1 tools (``health``, ``negotiate``, ``propose_config``) are kept as-is.
+Batch 2 (Phase 6) adds the game-phase tool surface from
+``integration_lab/audit/protocol_contract.md`` section 2: one discriminated,
+versioned ``receive_turn`` (plus a ``receive_move`` alias onto the exact same
+validation path), ``submit_audit``, and ``receive_control``. Handlers only
+validate + enqueue + ack; the turn is processed later by the local runtime.
+
+Idempotency policy: a repeated message with the SAME correlation_id/logical key
+and identical payload is idempotently acked; a conflicting payload for the same
+key is rejected as a protocol violation.
 """
 
 from __future__ import annotations
 
-import queue
-
 from fastmcp import FastMCP
 
 from police_peer.domain.roles import Role
-
-# Deliberately synchronous, no `import asyncio` needed here -- tool bodies are sync;
-# FastMCP runs them appropriately on its own event loop.
-
-
-class PeerInbox:
-    """Thread-safe mailboxes filled by MCP tools, drained by the caller."""
-
-    def __init__(self) -> None:
-        self.declarations: queue.Queue = queue.Queue()
-        self.proposals: queue.Queue = queue.Queue()
-        self._seen_by_correlation_id: dict[str, dict] = {}
-
-    def record_or_check_conflict(self, correlation_id: str, message: dict) -> bool:
-        """Return True if this is a new or identical-repeat message; False if
-        it conflicts with a previously-seen message under the same correlation_id."""
-        previous = self._seen_by_correlation_id.get(correlation_id)
-        if previous is not None and previous != message:
-            return False
-        self._seen_by_correlation_id[correlation_id] = message
-        return True
+from police_peer.domain.state_machine import PeerStateMachine
+from police_peer.infrastructure.inbox import PeerInbox
+from police_peer.infrastructure.turn_validation import TurnRouter
 
 
-def build_peer_server(role: Role, own_config_sha256: str) -> tuple[FastMCP, PeerInbox]:
-    """A FastMCP app exposing this batch's minimal negotiation tool surface."""
-    inbox = PeerInbox()
+def build_peer_server(
+    role: Role,
+    own_config_sha256: str,
+    *,
+    game_uid: str = "local-smoke-uid",
+    machine: PeerStateMachine | None = None,
+    queue_capacity: int = 100,
+) -> tuple[FastMCP, PeerInbox]:
+    """A FastMCP app exposing the handshake AND game-phase tool surface.
+
+    ``machine`` lets the caller share this peer's lifecycle state machine so the
+    handlers can gate on it; a fresh one is created when omitted.
+    """
+    inbox = PeerInbox(queue_capacity=queue_capacity)
+    state_machine = machine if machine is not None else PeerStateMachine()
+    router = TurnRouter(
+        inbox=inbox,
+        machine=state_machine,
+        expected_opponent_role=role.opponent(),
+        expected_game_uid=game_uid,
+        expected_config_sha256=own_config_sha256,
+    )
     mcp: FastMCP = FastMCP(name=f"police-thief-{role.value}")
 
     @mcp.tool
@@ -84,10 +87,32 @@ def build_peer_server(role: Role, own_config_sha256: str) -> tuple[FastMCP, Peer
             "reason": None if match else "config_sha256 mismatch",
         }
 
+    @mcp.tool
+    def receive_turn(message: dict) -> dict:
+        """Discriminated, versioned per-turn delivery (commit/ack/reveal/hint/etc.)."""
+        return router.handle_turn(message)
+
+    @mcp.tool
+    def receive_move(message: dict) -> dict:
+        """Compatibility alias: forwards to the exact ``receive_turn`` path."""
+        return router.handle_turn(message)
+
+    @mcp.tool
+    def submit_audit(message: dict) -> dict:
+        """Final audit / result-agreement submission."""
+        return router.handle_audit(message)
+
+    @mcp.tool
+    def receive_control(message: dict) -> dict:
+        """Optional out-of-band control signal (enqueued, gracefully accepted)."""
+        return router.handle_control(message)
+
     return mcp, inbox
 
 
 async def run_server_until_cancelled(mcp: FastMCP, host: str, port: int) -> None:
-    """Run the HTTP server; intended to be wrapped in an asyncio.Task and
-    cancelled for a clean shutdown (CancelledError is expected, not an error)."""
+    """Run the HTTP server; kept for callers that cancel the task directly.
+
+    Prefer ``server_lifecycle.serve_until_shutdown`` + ``stop_server`` for a
+    classified, quiet shutdown (Phase 1)."""
     await mcp.run_http_async(host=host, port=port, show_banner=False, log_level="warning")

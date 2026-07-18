@@ -34,6 +34,20 @@ class TrashTalkConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class StrategyConfig:
+    """Private, never-negotiated brain selection (``package.module:ClassName``)."""
+
+    police_class: str = "police_peer.strategy.baseline_police_brain:BaselinePoliceBrain"
+
+
+@dataclass(frozen=True, slots=True)
+class PlayConfig:
+    """Private RNG seed for league-mode tie-breaks; never shared or negotiated."""
+
+    seed: int = 0
+
+
+@dataclass(frozen=True, slots=True)
 class EmailConfig:
     recipient: str = ""
     mode: str = "disabled"
@@ -49,6 +63,8 @@ class PrivateGameConfig:
     network: NetworkPrivate
     trash_talk: TrashTalkConfig
     email: EmailConfig
+    strategy: StrategyConfig
+    play: PlayConfig
 
     @classmethod
     def from_dict(cls, data: dict) -> PrivateGameConfig:
@@ -81,10 +97,17 @@ class PrivateGameConfig:
                 "credentials_dir_env_var", "GMAIL_CREDENTIALS_DIR"
             ),
         )
+        strategy_raw = data.get("strategy", {})
+        strategy = StrategyConfig(
+            police_class=strategy_raw.get("police_class", StrategyConfig.police_class)
+        )
+        play = PlayConfig(seed=int(data.get("play", {}).get("seed", 0)))
         return cls(
             version=str(data.get("version", "0.0.0")),
             game=game,
             network=network,
             trash_talk=trash_talk,
             email=email,
+            strategy=strategy,
+            play=play,
         )

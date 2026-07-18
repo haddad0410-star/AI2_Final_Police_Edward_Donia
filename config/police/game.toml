@@ -20,9 +20,10 @@ my_port = 8901                                    # MY MCP server port (private 
 opponent_url = "http://127.0.0.1:8902/mcp"        # the ONLY thing I know about the opponent locally; replaced with a real remote URL only after Manual Gate A/B
 turn_timeout_seconds = 180
 
-# [strategy] -- optional: point at YOUR own brain subclass (else the default heuristic runs).
-# Left unset in this scaffold; will point at BeliefCutoffPoliceBrain once implemented.
-# police_class = "police_peer.strategy:BeliefCutoffPoliceBrain"
+# [strategy] -- point at YOUR own brain class (package.module:ClassName). Private,
+# never negotiated. Batch 2 ships only the from-scratch BaselinePoliceBrain.
+[strategy]
+police_class = "police_peer.strategy.baseline_police_brain:BaselinePoliceBrain"
 
 # [trash_talk] -- HOW the banter/hint is produced. The MOVE is always pure Python.
 [trash_talk]

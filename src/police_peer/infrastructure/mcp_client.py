@@ -43,6 +43,18 @@ async def call_propose_config(url: str, message: dict, timeout_seconds: float = 
     return await _call(url, "propose_config", {"message": message}, timeout_seconds)
 
 
+async def call_receive_turn(url: str, message: dict, timeout_seconds: float = 30.0) -> dict:
+    return await _call(url, "receive_turn", {"message": message}, timeout_seconds)
+
+
+async def call_submit_audit(url: str, message: dict, timeout_seconds: float = 30.0) -> dict:
+    return await _call(url, "submit_audit", {"message": message}, timeout_seconds)
+
+
+async def call_receive_control(url: str, message: dict, timeout_seconds: float = 30.0) -> dict:
+    return await _call(url, "receive_control", {"message": message}, timeout_seconds)
+
+
 async def wait_for_health(url: str, attempts: int, delay_seconds: float) -> dict:
     """Poll health with bounded retries; raises PeerUnavailableError if the
     opponent never comes up -- never hangs forever."""
