@@ -20,25 +20,70 @@ convention. Every update draws only from: the current belief, a legal-transition
 function, a `ScentField` (public evidence), or a hint region (parsed natural-language
 evidence).
 
-## Pipeline (per turn, once wired into the peer runtime in a later batch)
+## Pipeline (frozen, actually wired into the peer runtime as of Batch 3.5 Task 6)
 
-1. **Prior** — `uniform_prior(grid_size, barriers)`: uniform over non-barrier cells.
-2. **Transition** — `apply_transition(belief, neighbors_fn)`: predict step; spreads
-   each cell's mass uniformly over its legal successor cells, *before* new evidence
-   is folded in (per the requirement that transition precedes evidence at the
-   correct step).
-3. **Scent evidence** — `apply_scent_likelihood(belief, scent, trust)`: multiplies
-   each cell's probability by `1 + trust * scent_intensity`, then renormalizes.
-   All-zero scent evidence is a safe no-op (verified by test).
-4. **Hint evidence** — `apply_hint_likelihood(belief, hint_region, base_trust)`:
-   boosts the hinted region, but the *effective* trust is calibrated by how much the
-   region already agrees with existing evidence (`agreement = prior_region_mass *
-   grid_size² / |region|`). A hint that contradicts strong existing evidence gets a
-   much smaller boost than one that agrees — verified by
-   `test_contradictory_hint_is_down_weighted_not_corrupting`. A hint can never revive
-   a hard-zeroed, physically-impossible cell (barrier-masked cells stay exactly 0).
-5. **Barrier mask** — `apply_barrier_mask(belief, barriers)`: any newly-revealed
-   barrier zeroes its cell and renormalizes the rest.
+Implemented in `services/belief_update.py::advance_belief`, called once per
+turn at the top of `services/turn_loop.py::_decide_turn`, before the
+strategy brain is invoked. This section supersedes the pre-Batch-3.5
+description of this file (which described a hypothetical future order,
+written before the wire pipeline that actually delivers scent/hint evidence
+existed at all — see
+`integration_lab/evidence/batch3_5/observation_pipeline_audit.md`).
+
+1. **Prior** — `state.belief`, carried over from the previous turn (a fresh
+   `uniform_prior(grid_size, barriers)` at sub-game start).
+2. **Transition** — `apply_transition(belief, neighbors_fn)`: predict step;
+   spreads each cell's mass uniformly over its legal successor cells,
+   *before* new evidence is folded in.
+3. **Barrier mask** — `apply_barrier_mask(belief, barriers)`: zeroes any
+   barrier cell and renormalizes. Applied **before** evidence (not after),
+   so a barriered cell can never be re-inflated by a later scent/hint boost
+   — both likelihood steps only ever *multiply* existing mass (`0 * x ==
+   0`), so masking order matters and is fixed here.
+4. **Scent evidence** — `apply_scent_likelihood(belief, scent, trust)`,
+   applied **only if** `state.received_scent_valid` is `True`. A malformed
+   or missing scent grid takes an explicit missing-evidence path (the step
+   is skipped entirely) rather than being silently treated as a genuine
+   "nothing nearby" all-zero reading (Batch 3.5 Task 4).
+5. **Hint evidence** — `apply_hint_likelihood(belief, hint_region,
+   base_trust)`, applied **only if** `state.hint_region is not None` (the
+   receiver's best-effort decode of the opponent's hint text — Batch 3.5
+   Task 5). The *effective* trust is calibrated by how much the region
+   already agrees with existing evidence (`agreement = prior_region_mass *
+   grid_size² / |region|`), further scaled by `state.hint_trust` — a
+   bounded `[0.05, 0.95]` score updated turn-to-turn by comparing entropy
+   before/after the hint is applied (entropy drop -> trust rises; entropy
+   rise -> trust falls), **never** derived from the sealed `intent` field
+   (which stays hidden from the receiver until the final audit, per the
+   "truth/lie intent sealed" absolute rule). A hint can never revive a
+   hard-zeroed, physically-impossible cell — verified by
+   `tests/unit/test_belief_order.py::test_barrier_mask_applied_before_scent_and_hint`.
+6. **Normalization** — every step above renormalizes; a degenerate
+   (all-zero) raw grid falls back to a fresh uniform distribution.
+
+## Evidence timing (why it lags by one turn)
+
+Because both peers commit and reveal their own turn *before* receiving the
+opponent's same-step reveal (protocol_contract.md §3.3a), evidence for turn
+N (the opponent's scent/hint sent that turn) is folded into belief by
+`advance_belief` at the **start of turn N+1**, not turn N itself.
+`ingest_opponent_reveal` only ever writes into `RuntimeState` fields
+(`received_scent`, `received_scent_valid`, `hint_region`) that the *next*
+call to `advance_belief` reads exactly once — so step-N evidence is never
+applied to step N-1 or step N+1's prediction.
+
+## Duplicate / stale evidence and sub-game reset
+
+Duplicate reveal messages are deduplicated by
+`infrastructure/turn_validation.py::TurnRouter` (keyed on
+`(sub_game_number, step, sender, message_type)`) before they reach the
+inbox a second time; stale (`sequence_id` regression) messages are rejected
+with `STALE_SEQUENCE` and never enqueued. Sequence tracking is scoped per
+`(sub_game_number, sender)` so a fresh sub-game's sequence restarting at 0
+is never confused with a prior sub-game's numbering (risk #16). Every
+sub-game starts with a fresh uniform belief, `hint_trust=0.5`, and
+`hint_region=None` — nothing carries over from a prior sub-game
+(`tests/unit/test_belief_order.py::test_subgame_reset_starts_uniform`).
 
 ## Helpers
 

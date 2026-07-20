@@ -57,6 +57,7 @@ def _payload(sub_game: int, step: int) -> SealedTurnPayload:
         intent="truth",
         hint="north looks fine",
         scent_digest="d" * 64,
+        scent_grid=((0.0, 0.0), (0.0, 0.0)),
         capture_claim=(step % 7, 0),
         claim_response=None,
         win_claim=False,

@@ -30,6 +30,7 @@ def payload_from_step(step: dict) -> SealedTurnPayload:
         intent=step["intent"],
         hint=step["hint"],
         scent_digest=step["scent_digest"],
+        scent_grid=tuple(tuple(row) for row in step["scent_grid"]) if "scent_grid" in step else (),
         capture_claim=tuple(claim) if claim else None,
         claim_response=step["claim_response"],
         win_claim=step["win_claim"],

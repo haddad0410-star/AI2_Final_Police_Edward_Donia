@@ -102,20 +102,21 @@ class HttpOpponentTransport:
         return OpponentReveal(
             move=body.get("move"),
             hint=body.get("hint", ""),
-            scent_grid=self._latest_scent_grid(),
+            scent_grid=self._scent_grid_from_body(body),
             barrier=tuple(barrier) if barrier else None,
-            claim_response=self._latest_claim_response(),
+            claim_response=body.get("claim_response"),
             win_claim=bool(body.get("win_claim", False)),
         )
 
-    def _latest_scent_grid(self) -> tuple[tuple[float, ...], ...]:
-        for message in reversed(self._inbox.turn_messages):
-            if message.get("message_type") == "scent" and "grid" in message:
-                return tuple(tuple(row) for row in message["grid"])
-        return tuple(tuple(0.0 for _ in range(self._grid_size)) for _ in range(self._grid_size))
-
-    def _latest_claim_response(self) -> bool | None:
-        for message in reversed(self._inbox.turn_messages):
-            if message.get("message_type") == "capture_response":
-                return bool(message.get("caught"))
-        return None
+    def _scent_grid_from_body(self, body: dict) -> object:
+        """The opponent's real scent grid, sealed and revealed as a field of
+        their own reveal record (Batch 3.5 Task 4 -- previously this method
+        scanned for a standalone ``"scent"`` message type that no sender ever
+        produced, so it always fell back to an all-zero grid regardless of
+        the opponent's real emission; see
+        integration_lab/evidence/batch3_5/observation_pipeline_audit.md
+        defect B1). Returns ``None`` (explicit missing evidence) or whatever
+        raw structure was received, unvalidated -- validation happens
+        downstream in ``ingest_opponent_reveal`` so malformed data is
+        rejected rather than silently coerced into a false-valid zero grid."""
+        return body.get("scent_grid")

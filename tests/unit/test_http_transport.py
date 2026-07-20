@@ -18,13 +18,23 @@ GRID = 7
 
 
 def _inbox_with_opponent_turn() -> PeerInbox:
+    # ``claim_response`` (like ``scent_grid``) travels bundled inside the
+    # ``reveal`` body -- never as a separate message (Batch 3.5 Task 9,
+    # defect H addendum: this mirrors the earlier scent-grid fix, B1).
     inbox = PeerInbox()
-    inbox.turn_messages.append(
-        {"message_type": "reveal", "reveal": {"move": "S", "hint": "west", "win_claim": False}}
-    )
     grid = [[0.3 for _ in range(GRID)] for _ in range(GRID)]
-    inbox.turn_messages.append({"message_type": "scent", "grid": grid})
-    inbox.turn_messages.append({"message_type": "capture_response", "caught": True})
+    inbox.turn_messages.append(
+        {
+            "message_type": "reveal",
+            "reveal": {
+                "move": "S",
+                "hint": "west",
+                "win_claim": False,
+                "scent_grid": grid,
+                "claim_response": True,
+            },
+        }
+    )
     return inbox
 
 

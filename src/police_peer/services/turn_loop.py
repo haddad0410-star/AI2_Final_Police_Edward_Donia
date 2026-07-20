@@ -15,10 +15,12 @@ from police_peer.domain.actions import MoveAction
 from police_peer.domain.captures import SubGameResult
 from police_peer.domain.crypto import SealedRecord, SealedTurnSession
 from police_peer.domain.deadline import DeadlineTracker
+from police_peer.domain.hint_region import region_for_intent
 from police_peer.domain.hints import HintIntent
 from police_peer.domain.rules import apply_move, is_legal_barrier_cell, legal_move_directions
 from police_peer.domain.scent import apply_turn
 from police_peer.domain.state_machine import EventKind, PeerStateMachine, TransitionEvent
+from police_peer.services import turn_trace
 from police_peer.services.belief_update import advance_belief
 from police_peer.services.capture_resolution import ingest_opponent_reveal, is_capture_confirmed
 from police_peer.services.outcomes import SubGameRunResult
@@ -55,6 +57,7 @@ class SubGameContext:
 
 
 def _decide_turn(ctx: SubGameContext, state: RuntimeState):
+    belief_before = state.belief
     state = advance_belief(state)
     legal = legal_move_directions(state.position, state.board)
     request = DecisionRequest(
@@ -77,14 +80,31 @@ def _decide_turn(ctx: SubGameContext, state: RuntimeState):
         state = state.with_barrier_placed(decision.barrier)
     destination = apply_move(state.position, MoveAction(decision.direction), state.board)
     intent = HintIntent.TRUTH if decision.honest_intent else HintIntent.LIE
-    hint = ctx.hint_provider.generate(intent, ctx.rng)
+    region = region_for_intent(decision.direction, intent, ctx.rng)
+    hint = ctx.hint_provider.generate(intent, ctx.rng, region=region)
     new_scent = apply_turn(state.own_scent, destination, ctx.decay)
+    turn_trace.record_decide_turn(
+        state=state,
+        belief_before=belief_before,
+        brain=ctx.brain,
+        decision=decision,
+        intent=intent,
+        hint=hint,
+        new_scent=new_scent,
+    )
     return state, decision, destination, hint, new_scent
 
 
 def _result(result: SubGameResult, state: RuntimeState, reason: str, records) -> SubGameRunResult:
+    # ``steps`` must match ``len(records)`` -- the number of sealed records
+    # actually written to the log -- not ``state.step`` (a separate turn
+    # counter that a capture confirmed via the opponent's DELAYED answer can
+    # leave one behind, since the confirming exchange still appends a
+    # record before the capture check returns; Batch 3.5 Task 9 found this
+    # via a real replay-verifier TAMPERED result: "log has 2 steps, result
+    # declares 1").
     return SubGameRunResult(
-        result=result, steps=state.step, reason=reason, final_state=state, records=tuple(records)
+        result=result, steps=len(records), reason=reason, final_state=state, records=tuple(records)
     )
 
 
@@ -132,6 +152,9 @@ async def run_sub_game(ctx: SubGameContext) -> SubGameRunResult:
             machine.require(TransitionEvent.of(E.REVEAL_SENT))
             state = state.moved_to(destination).with_own_scent(new_scent)
             state = ingest_opponent_reveal(state, opponent)
+            turn_trace.record_turn_exchange(
+                state=state, commit_hash=commit_hash, payload=payload, opponent=opponent
+            )
             records.append(session.audit_reveal())
             sequence_id += 2
             if is_capture_confirmed(opponent):

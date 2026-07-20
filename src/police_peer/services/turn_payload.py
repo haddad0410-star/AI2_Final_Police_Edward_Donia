@@ -46,6 +46,7 @@ def build_payload(
         intent=hint.intent.value,
         hint=hint.text,
         scent_digest=digest_scent_grid(own_scent.grid),
+        scent_grid=own_scent.grid,
         capture_claim=(destination.row, destination.col),
         claim_response=None,
         win_claim=False,

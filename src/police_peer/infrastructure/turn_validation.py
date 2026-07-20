@@ -22,18 +22,13 @@ from police_peer.infrastructure.inbox import PeerInbox
 _LOG = logging.getLogger("police_peer.turn")
 
 #: Every message_type carried by the single discriminated ``receive_turn`` tool.
-KNOWN_TURN_TYPES = frozenset(
-    {
-        "commitment",
-        "commitment_ack",
-        "reveal",
-        "hint",
-        "scent",
-        "barrier",
-        "capture_claim",
-        "capture_response",
-    }
-)
+#: ``hint``/``scent``/``barrier``/``capture_claim`` are NOT separate message
+#: types in this protocol -- those fields all travel bundled inside a single
+#: ``reveal`` message body (see ``SealedTurnPayload.public_reveal_dict()``).
+#: A prior version of this set listed them as standalone types that no
+#: sender ever produced; removed as dead/misleading scaffolding (Batch 3.5
+#: Task 4, audit finding B1).
+KNOWN_TURN_TYPES = frozenset({"commitment", "commitment_ack", "reveal", "capture_response"})
 
 #: States in which this peer will not accept game messages at all.
 _NON_RECEIVING = TERMINAL_STATES | {PeerState.INITIALIZING}

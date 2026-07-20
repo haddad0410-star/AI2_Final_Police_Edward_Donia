@@ -20,7 +20,11 @@ class OpponentReveal:
 
     move: str | None
     hint: str
-    scent_grid: tuple[tuple[float, ...], ...]
+    #: The opponent's raw claimed scent grid, UNVALIDATED at this point --
+    #: may be None (missing) or malformed; ``ingest_opponent_reveal`` is
+    #: responsible for validating before treating it as real evidence
+    #: (Batch 3.5 Task 4).
+    scent_grid: object
     barrier: tuple[int, int] | None = None
     claim_response: bool | None = None
     win_claim: bool = False

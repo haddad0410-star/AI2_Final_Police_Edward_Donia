@@ -39,6 +39,7 @@ def _payload(**overrides) -> SealedTurnPayload:
         "intent": "truth",
         "hint": "The northern lanes feel promising.",
         "scent_digest": digest_scent_grid(((0.0, 0.1), (0.2, 0.9))),
+        "scent_grid": ((0.0, 0.1), (0.2, 0.9)),
         "capture_claim": None,
         "claim_response": None,
         "win_claim": False,

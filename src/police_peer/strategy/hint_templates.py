@@ -49,9 +49,18 @@ class TemplateHintProvider:
     def __init__(self, max_words: int = 15) -> None:
         self._max_words = max_words
 
-    def generate(self, intent: HintIntent, rng: random.Random, use_hebrew: bool = False) -> Hint:
+    def generate(
+        self,
+        intent: HintIntent,
+        rng: random.Random,
+        use_hebrew: bool = False,
+        region: str | None = None,
+    ) -> Hint:
         """Render one word-limited hint consistent with ``intent``.
 
+        ``region`` (a cardinal word), when given, flavours the text -- the
+        caller decides whether it is the true or a false region, per
+        ``intent``; this provider has no access to positions itself.
         Truncates defensively so the returned hint always respects
         ``max_words``, even if a future template were edited to be longer.
         """
@@ -59,7 +68,8 @@ class TemplateHintProvider:
             text = rng.choice(_HEBREW)
         else:
             pool = _TRUTHFUL if intent is HintIntent.TRUTH else _DECEPTIVE
-            text = rng.choice(pool).format(region=rng.choice(REGIONS))
+            chosen_region = region if region in REGIONS else rng.choice(REGIONS)
+            text = rng.choice(pool).format(region=chosen_region)
         words = text.split()
         if len(words) > self._max_words:
             text = " ".join(words[: self._max_words])

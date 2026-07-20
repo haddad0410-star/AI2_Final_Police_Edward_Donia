@@ -123,12 +123,16 @@ def test_receiving_blocked_in_terminal_state() -> None:
     assert router.handle_turn(_msg("commitment", 0, 0))["error_code"] == "WRONG_STATE"
 
 
-def test_capture_claim_response_round_trip() -> None:
+def test_capture_response_round_trip() -> None:
+    # ``capture_claim`` travels bundled inside a ``reveal`` body (see
+    # SealedTurnPayload.public_reveal_dict()), never as its own message
+    # type; only ``capture_response`` is a real standalone type (Batch 3.5
+    # Task 4, audit finding B1 -- dead scaffolding removed).
     router, inbox = _router()
-    router.handle_turn(_msg("capture_claim", 0, 0, claimed=[2, 2]))
+    router.handle_turn(_msg("reveal", 0, 0))
     router.handle_turn(_msg("capture_response", 0, 1, caught=False))
     assert [m["message_type"] for m in inbox.turn_messages] == [
-        "capture_claim",
+        "reveal",
         "capture_response",
     ]
 
