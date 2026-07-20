@@ -5,6 +5,54 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed — Implementation Batch 3.5 (observation-pipeline repair)
+
+- `domain/crypto/payload.py::SealedTurnPayload` gained a real `scent_grid`
+  field (schema `commit-reveal/2`); the raw scent grid now actually crosses
+  the wire in the reveal body, not just a `scent_digest` hash of it — the
+  root cause of Police's belief never receiving real scent evidence.
+- `infrastructure/http_transport.py::_to_reveal` now reads
+  `scent_grid`/`claim_response` directly from the reveal body, instead of
+  scanning for standalone `"scent"`/`"capture_response"` message types
+  that no sender ever produced (dead scaffolding, removed from
+  `KNOWN_TURN_TYPES`) — a second, independent defect. The
+  `claim_response` fix means **capture confirmation can now actually
+  reach Police**, found while building Task 9's real-HTTP capture sanity
+  fixtures.
+- `intent` (the hint's truth/lie verdict) removed from
+  `public_reveal_dict()` — now sealed until the final audit like `nonce`,
+  per the "truth/lie intent sealed" rule (was previously disclosed at
+  reveal time, defeating the purpose of tracking hint reliability from
+  consistency).
+- New `domain/scent_validation.py` (malformed/missing scent takes an
+  explicit missing-evidence path) and `domain/hint_region.py`
+  (region-word encode/decode for outgoing/incoming hints, including a
+  genuine false-region choice when lying — previously Police's hint region
+  was random regardless of intent, carrying no real signal even in
+  principle).
+- `services/belief_update.py::advance_belief` now folds in real scent
+  (when valid) and hint evidence (when decoded), in the frozen order
+  documented in `docs/BELIEF_MODEL.md`; added consistency-based hint-trust
+  tracking (entropy-delta), never derived from the sealed `intent` field.
+- `strategy/belief_cutoff_config.py`: `barrier_confidence_gate` split out
+  as an independent field from `barrier_utility_floor` (previously one
+  field served two purposes with opposite sensitivities — the confidence
+  gate was mathematically unreachable given the real ~0.30 belief-
+  confidence ceiling under continuous evidence). Defaults retuned to
+  achievable values.
+- `services/turn_loop.py::_result`: `steps` now derives from
+  `len(records)` (the actual log length) instead of a separate turn
+  counter, fixing a real replay-verifier `TAMPERED` finding surfaced by
+  the first working capture scenario (the one-turn-delayed confirmation
+  appends one more record than the counter had reached).
+- 49 new tests (scent/hint transport, belief order, barrier lifecycle,
+  strategy-pipeline integration) — 305 -> 354 tests, coverage 96.53% ->
+  96.07%.
+- Held-out (400 games) and real-HTTP (18 sub-games, 3 series) results:
+  Police capture rate 0% -> 100% in every matchup (new ceiling tie,
+  honestly analyzed, not claimed as strategy superiority). Full analysis:
+  `integration_lab/evidence/batch3_5/`.
+
 ### Added — Implementation Batch 3
 
 - `strategy/belief_cutoff_police_brain.py` (+ `belief_cutoff_config.py`,

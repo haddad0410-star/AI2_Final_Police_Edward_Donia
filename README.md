@@ -1,17 +1,22 @@
 # AI2 Final Project — Police Peer (police_peer)
 
-**Status: Implementation Batch 3.** Everything from session recovery step C
-plus: the original `BeliefCutoffPoliceBrain` advanced strategy (belief-state
-pursuit, bounded lookahead, entropy-gated exploration, real barrier
-engineering — see `docs/STRATEGY.md`), private-config strategy profiles
-(`baseline`/`advanced`/`experiment`), a research-only local simulator with
-100-game held-out evaluation, and 3 real six-sub-game HTTP series validating
-the advanced strategy against baseline and against the advanced Thief.
-Held-out and real-HTTP results found **no demonstrated capture-rate
-improvement** over the baseline in the current experimental configuration —
-reported honestly with root-cause analysis, not hidden — see
-`integration_lab/evidence/batch3/strategy_research/limitations.md`. GUI,
-Gmail reporting, public network exposure, and league play are **not**
+**Status: Implementation Batch 3.5.** Batch 3 found that held-out/real-HTTP
+evaluation showed no demonstrated capture-rate improvement for
+`BeliefCutoffPoliceBrain`, root-caused to a real observation-pipeline
+defect: the wire protocol never actually delivered scent/hint evidence to
+belief updates, and (found while repairing it) capture confirmation could
+never reach Police at all. Batch 3.5 repairs both defects end to end (see
+`integration_lab/evidence/batch3_5/pipeline_root_cause.md`) and
+re-validates: held-out evaluation (400 games) and real HTTP validation (18
+sub-games, 3 series) now show **100% Police capture rate in every
+matchup** — a complete reversal from Batch 3's 0%, and real, functioning
+barrier usage (previously never observed). This is a new ceiling tie
+(capture, not survival); `BeliefCutoffPoliceBrain` shows no demonstrated
+capture-RATE improvement over baseline (both 100%), but does show a real,
+distinct barrier-driven capture mechanism (70% of captures against a
+baseline Thief) — reported honestly, see
+`integration_lab/evidence/batch3_5/strategy_research/acceptance_criteria_evaluation.md`.
+GUI, Gmail reporting, public network exposure, and league play are **not**
 implemented/run yet. Readiness: see
 `integration_lab/audit/PROGRESS.md` for the current level.
 
@@ -66,6 +71,9 @@ shared protocol contract only (see `docs/PROTOCOL.md`).
   Uvicorn listening socket) was found and fixed — see `CHANGELOG.md`.
 - 305 tests, 96.53% coverage, 0 Ruff violations, every file ≤150 meaningful
   lines (Implementation Batch 3; see `integration_lab/evidence/batch3/quality/`).
+- **354 tests, 96.07% coverage, 0 Ruff violations, every file ≤150 meaningful
+  lines (Implementation Batch 3.5 — observation-pipeline repair; see
+  `integration_lab/evidence/batch3_5/quality/`).**
 
 ## Session recovery step C (new)
 

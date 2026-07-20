@@ -74,9 +74,7 @@ class BeliefCutoffPoliceBrain(PoliceBrainBase):
                 best_score, best_direction, best_destination = s, direction, destination
 
         barrier = None
-        confident = _belief_confidence(request.belief, current_entropy) >= (
-            1.0 - w.barrier_utility_floor / 2
-        )
+        confident = _belief_confidence(request.belief, current_entropy) >= w.barrier_confidence_gate
         if board is not None and request.barriers_remaining > 0 and confident:
             barrier = self._best_barrier(request, board, best_destination, trust)
 

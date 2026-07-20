@@ -9,14 +9,27 @@ This role ships two brains, both implemented (Implementation Batch 3):
    Not a copy of the reference repository's shipped heuristic. Frozen (Batch 3
    Task 2, regression-tested) as the comparison point for the strategy below.
 2. **`BeliefCutoffPoliceBrain`** (`strategy/belief_cutoff_police_brain.py`) — original
-   advanced strategy. **Held-out and real-HTTP evaluation found no demonstrated
-   capture-rate improvement over the baseline** in the current experimental
-   configuration — see `integration_lab/evidence/batch3/strategy_research/limitations.md`
-   for the root-cause analysis (the real wire protocol does not yet deliver
-   scent/hint signal to either brain's belief update, so capture within the
-   35-move budget is not reliably achievable by either strategy). Reported
-   honestly, not hidden. This is a genuinely more sophisticated, tested
-   implementation, but no superiority claim is made.
+   advanced strategy. Batch 3 found no demonstrated capture-rate improvement,
+   root-caused to a real observation-pipeline defect (see
+   `integration_lab/evidence/batch3/strategy_research/limitations.md`) — since
+   repaired in **Implementation Batch 3.5**
+   (`integration_lab/evidence/batch3_5/pipeline_root_cause.md`). Held-out and
+   real-HTTP re-evaluation now shows **100% capture rate for both baseline and
+   advanced Police** (a new ceiling tie — still no demonstrated capture-RATE
+   improvement), but a real, distinct, previously-nonexistent capability: the
+   barrier-placement mechanism now genuinely fires (0 barriers/game for
+   baseline, 5-6/game for advanced) and directly causes 70% of captures
+   against a baseline Thief. Batch 3.5 also fixed a real bug in the barrier
+   gate itself: `barrier_utility_floor` was reused for two purposes with
+   opposite sensitivities (the confidence-gate threshold and `_best_barrier`'s
+   own minimum-utility floor), making the gate mathematically unreachable
+   given the real ~0.30 belief-confidence ceiling under continuous evidence;
+   now split into independent `barrier_confidence_gate` (default 0.20) and
+   `barrier_utility_floor` (default 0.40) fields — see
+   `integration_lab/evidence/batch3_5/barrier_root_cause.md`. Full analysis:
+   `integration_lab/evidence/batch3_5/strategy_research/acceptance_criteria_evaluation.md`.
+   Reported honestly, not hidden. This is a genuinely more sophisticated,
+   tested implementation, but no capture-rate superiority claim is made.
 
 ### `BeliefCutoffPoliceBrain` design
 

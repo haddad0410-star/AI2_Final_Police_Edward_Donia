@@ -16,6 +16,36 @@ Current, honest state as of this scaffold (Phase 1-2, no application code writte
 This file will be kept current every phase — never allowed to go stale while claiming
 a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
 
+## Current state (Implementation Batch 3.5)
+
+- The observation-pipeline defect identified in Batch 3 (below) is
+  **repaired**: real scent/hint evidence now genuinely reaches belief
+  updates over the real wire protocol, and a real, additional
+  capture-confirmation defect (`claim_response` had the identical
+  dead-message-type bug as the scent grid — found while building capture
+  sanity fixtures) is also fixed. Held-out evaluation (400 games) and real
+  HTTP validation (18 sub-games, 3 series) now show **100% Police capture
+  rate in every matchup** — a complete reversal from Batch 3's 0%.
+- This is a **new ceiling tie** (capture, not survival), honestly analyzed
+  in `integration_lab/evidence/batch3_5/strategy_research/acceptance_criteria_evaluation.md`:
+  `BeliefCutoffPoliceBrain` shows **no demonstrated capture-rate
+  improvement** over `BaselinePoliceBrain` (both 100%, ceiling-tied), but
+  does show real, repeatable barrier usage (0 barriers/game for baseline,
+  5-6/game for advanced) and directly causes 70% of captures via the
+  barrier mechanism specifically when facing a baseline Thief — a
+  genuinely new, functioning capability, not previously observable at all.
+  Barrier threshold logic itself was also fixed (Task 8): a Batch 3 field
+  (`barrier_utility_floor`) was reused for two purposes with opposite
+  sensitivities, making the confidence gate mathematically unreachable;
+  now split into independent `barrier_confidence_gate`/`barrier_utility_floor`
+  fields.
+- Full analysis: `integration_lab/evidence/batch3_5/` (root cause, audit,
+  before/after traces, barrier repair, capture sanity fixtures, held-out
+  and real-HTTP results, figures).
+- Readiness: `LOCAL_READY` (unchanged — Batch 3.5 repairs a functional
+  defect and re-validates on top of an already-`LOCAL_READY` baseline;
+  `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY` still not claimed).
+
 ## Current state (Implementation Batch 3)
 
 - `BeliefCutoffPoliceBrain` is implemented, unit-tested (22 tests), and
