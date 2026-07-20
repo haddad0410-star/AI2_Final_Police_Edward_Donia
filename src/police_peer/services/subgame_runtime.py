@@ -21,6 +21,7 @@ from police_peer.services.transport import OpponentTransport
 from police_peer.services.turn_loop import SubGameContext, run_sub_game
 from police_peer.shared.config_models import SharedGameConfig
 from police_peer.shared.private_config import PrivateGameConfig
+from police_peer.strategy.belief_cutoff_config import weights_from_dict
 from police_peer.strategy.hint_templates import TemplateHintProvider
 from police_peer.strategy.loader import load_police_brain
 
@@ -91,9 +92,10 @@ def build_context(
     rng: random.Random,
 ) -> SubGameContext:
     """Assemble a :class:`SubGameContext` (machine transitions handled by caller)."""
+    weights = weights_from_dict(private.strategy.weights) if private.strategy.weights else None
     return SubGameContext(
         state=build_initial_state(shared, sub_game_number),
-        brain=load_police_brain(private.strategy.police_class),
+        brain=load_police_brain(private.strategy.police_class, weights=weights),
         hint_provider=TemplateHintProvider(shared.world.hint_max_words),
         transport=transport,
         machine=machine,

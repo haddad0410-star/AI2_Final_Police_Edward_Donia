@@ -16,7 +16,7 @@ from police_peer.domain.captures import SubGameResult
 from police_peer.domain.crypto import SealedRecord, SealedTurnSession
 from police_peer.domain.deadline import DeadlineTracker
 from police_peer.domain.hints import HintIntent
-from police_peer.domain.rules import apply_move, legal_move_directions
+from police_peer.domain.rules import apply_move, is_legal_barrier_cell, legal_move_directions
 from police_peer.domain.scent import apply_turn
 from police_peer.domain.state_machine import EventKind, PeerStateMachine, TransitionEvent
 from police_peer.services.belief_update import advance_belief
@@ -64,8 +64,17 @@ def _decide_turn(ctx: SubGameContext, state: RuntimeState):
         step=state.step,
         rng=ctx.rng,
         deadline=DeadlineTracker(ctx.response_timeout_sec).start(),
+        board=state.board,
+        barriers_remaining=state.barriers_remaining,
+        visited=state.visited,
     )
     decision = ctx.brain.decide(request)
+    if (
+        decision.barrier is not None
+        and state.barriers_remaining > 0
+        and is_legal_barrier_cell(state.position, decision.barrier, state.board)
+    ):
+        state = state.with_barrier_placed(decision.barrier)
     destination = apply_move(state.position, MoveAction(decision.direction), state.board)
     intent = HintIntent.TRUTH if decision.honest_intent else HintIntent.LIE
     hint = ctx.hint_provider.generate(intent, ctx.rng)

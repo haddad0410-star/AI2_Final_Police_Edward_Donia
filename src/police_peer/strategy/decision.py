@@ -12,13 +12,19 @@ import random
 from dataclasses import dataclass
 
 from police_peer.domain.belief_model import BeliefMap
+from police_peer.domain.board import Board
 from police_peer.domain.deadline import DeadlineTracker
 from police_peer.domain.positions import Direction, Position
 
 
 @dataclass(frozen=True, slots=True)
 class DecisionRequest:
-    """Everything a brain is allowed to see when choosing this turn's move."""
+    """Everything a brain is allowed to see when choosing this turn's move.
+
+    ``board``/``barriers_remaining`` were added for advanced strategies that
+    evaluate barrier placement (Batch 3); they default to ``None``/``0`` so
+    existing brains (which never reference them) are unaffected.
+    """
 
     own_position: Position
     legal_directions: tuple[Direction, ...]
@@ -26,6 +32,9 @@ class DecisionRequest:
     step: int
     rng: random.Random
     deadline: DeadlineTracker | None = None
+    board: Board | None = None
+    barriers_remaining: int = 0
+    visited: frozenset[Position] = frozenset()
 
 
 @dataclass(frozen=True, slots=True)

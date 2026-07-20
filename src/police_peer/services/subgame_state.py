@@ -48,5 +48,15 @@ class RuntimeState:
     def with_board(self, board: Board) -> RuntimeState:
         return replace(self, board=board)
 
+    def with_barrier_placed(self, cell: Position) -> RuntimeState:
+        """Apply OUR OWN newly-placed barrier to the local board and
+        decrement the remaining quota. Legality (adjacency, quota, in
+        bounds) must already have been checked by the caller."""
+        return replace(
+            self,
+            board=self.board.with_barrier(cell),
+            barriers_remaining=self.barriers_remaining - 1,
+        )
+
     def advanced_step(self) -> RuntimeState:
         return replace(self, step=self.step + 1)

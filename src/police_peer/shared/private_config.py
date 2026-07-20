@@ -7,7 +7,7 @@ define (enforced in config_loader.load_private_config).
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from police_peer.shared.errors import ConfigError
 
@@ -33,11 +33,21 @@ class TrashTalkConfig:
     provider: str = "template"
 
 
+#: Documented private strategy profiles (Batch 3, Task 5) -- "baseline" and
+#: "advanced" select the class default weights; "experiment" additionally
+#: carries a [strategy.weights] override table. The profile NAME itself is
+#: local documentation only; the authoritative, audited value is always
+#: `police_class` (also recorded verbatim in the Step-0 declaration).
+KNOWN_PROFILES = frozenset({"baseline", "advanced", "experiment"})
+
+
 @dataclass(frozen=True, slots=True)
 class StrategyConfig:
     """Private, never-negotiated brain selection (``package.module:ClassName``)."""
 
     police_class: str = "police_peer.strategy.baseline_police_brain:BaselinePoliceBrain"
+    profile: str = "baseline"
+    weights: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,8 +108,22 @@ class PrivateGameConfig:
             ),
         )
         strategy_raw = data.get("strategy", {})
+        profile = strategy_raw.get("profile", "baseline")
+        if profile not in KNOWN_PROFILES:
+            raise ConfigError(
+                f"unknown strategy profile {profile!r}; expected one of {sorted(KNOWN_PROFILES)}"
+            )
+        weights_raw = strategy_raw.get("weights", {})
+        if not all(
+            isinstance(v, (int, float)) and not isinstance(v, bool) for v in weights_raw.values()
+        ):
+            raise ConfigError("strategy.weights values must all be numeric")
         strategy = StrategyConfig(
-            police_class=strategy_raw.get("police_class", StrategyConfig.police_class)
+            police_class=strategy_raw.get(
+                "police_class", "police_peer.strategy.baseline_police_brain:BaselinePoliceBrain"
+            ),
+            profile=profile,
+            weights=dict(weights_raw),
         )
         play = PlayConfig(seed=int(data.get("play", {}).get("seed", 0)))
         return cls(
