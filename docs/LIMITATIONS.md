@@ -16,6 +16,28 @@ Current, honest state as of this scaffold (Phase 1-2, no application code writte
 This file will be kept current every phase — never allowed to go stale while claiming
 a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
 
+## Current state (Implementation Batch 3)
+
+- `BeliefCutoffPoliceBrain` is implemented, unit-tested (22 tests), and
+  validated over 3 real six-sub-game HTTP series — but held-out research
+  evaluation (100 games) and the real HTTP series both found **no
+  demonstrated capture-rate improvement** over `BaselinePoliceBrain` in the
+  current experimental configuration (both 0% captures). Root cause: the
+  real wire protocol does not currently deliver scent or hint signal to
+  either brain's belief update, so belief never concentrates enough for
+  the barrier-confidence gate to open — a pre-existing system
+  characteristic, not a defect in this batch's strategy code. Full
+  analysis: `integration_lab/evidence/batch3/strategy_research/limitations.md`.
+- GUI, Gmail reporting, public network exposure, and league play remain
+  not implemented/run, unchanged from session recovery step C.
+- `pheromone_min_center_intensity=0.5` remains unconfirmed as binding (risk
+  #2, unchanged). Repository visibility/licensing consent (Manual Gate E)
+  remains unresolved, unchanged.
+- Readiness: `LOCAL_READY` (unchanged from session recovery step C — Batch
+  3 adds strategy work on top of an already-`LOCAL_READY` local P2P
+  baseline; `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY` still not
+  claimed).
+
 ## Current state (session recovery step C)
 
 - Implemented and independently verified: config loading, domain

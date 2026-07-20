@@ -5,6 +5,42 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added — Implementation Batch 3
+
+- `strategy/belief_cutoff_police_brain.py` (+ `belief_cutoff_config.py`,
+  `belief_cutoff_utility.py`, `belief_cutoff_hint_trust.py`): original
+  advanced Police strategy. Full-belief-distribution pursuit (not just
+  argmax), bounded belief-transition lookahead, entropy-gated pursuit/
+  exploration switching, real BFS-based barrier-placement evaluation
+  (reachable-area reduction) gated by belief confidence, a hint-trust proxy
+  (entropy-delta based — the wire protocol does not currently deliver raw
+  hint text to strategy code; documented in `docs/STRATEGY.md`), and a
+  documented, configurable utility function. 22 unit tests.
+- `strategy/decision.py::DecisionRequest` gained `board`/`barriers_remaining`/
+  `visited` fields (default-backed, `BaselinePoliceBrain` unaffected).
+- `services/subgame_state.py::RuntimeState.with_barrier_placed` +
+  `services/turn_loop.py` now actually apply a strategy's chosen barrier to
+  local state and decrement the quota — previously dead code, since
+  `BaselinePoliceBrain` never places one; exercised for the first time by
+  `BeliefCutoffPoliceBrain`.
+- `strategy/loader.py::load_police_brain` gained an optional `weights`
+  parameter, passed through only when the resolved class's constructor
+  accepts one.
+- `shared/private_config.py::StrategyConfig` gained `profile`
+  (`baseline`/`advanced`/`experiment`) and `weights` (validated numeric-
+  only, unknown-key-rejecting) fields, selected via each peer's own private
+  `game.toml` — never the signed shared `game.json`.
+- Held-out research evaluation (100 games, seeds 2000-2099) and 3 real
+  six-sub-game HTTP series found **no demonstrated capture-rate
+  improvement** over `BaselinePoliceBrain` in the current experimental
+  configuration — root cause and two bounded redesign iterations
+  documented in `integration_lab/evidence/batch3/strategy_research/limitations.md`.
+  Reported honestly as inconclusive, not hidden.
+- `integration_lab/strategy_research/` (research-only local simulator,
+  leakage tests, experiment runner, statistics, figures) and
+  `integration_lab/run_advanced_strategy_series.py` (real HTTP validation
+  launcher) — see `integration_lab/evidence/batch3/`.
+
 ### Changed — Session recovery step C
 
 - Declaration schema frozen as canonical, versioned `declaration/2`
