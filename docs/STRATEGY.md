@@ -30,6 +30,16 @@ This role ships two brains, both implemented (Implementation Batch 3):
    `integration_lab/evidence/batch3_5/strategy_research/acceptance_criteria_evaluation.md`.
    Reported honestly, not hidden. This is a genuinely more sophisticated,
    tested implementation, but no capture-rate superiority claim is made.
+   **Implementation Batch 3.6** ran a dedicated fairness/correctness audit
+   on top of this result: an 800-game multi-scale robustness check (7x7
+   alt-start, 9x9, 11x11, all `RESEARCH_ONLY`) confirmed the 100%-capture
+   ceiling persists at every board scale tested — a genuine game-design
+   property, not a 7x7-specific artifact — and 6 deterministic behavioral
+   fixtures (no true-opponent-position access) proved
+   `BeliefCutoffPoliceBrain` and `BaselinePoliceBrain` genuinely choose
+   different actions from identical inputs. Final classification: **C**
+   (genuine ceiling) **with D** (real behavioral differences) **as a
+   corollary** — see `integration_lab/evidence/batch3_6/conclusion.md`.
 
 ### `BeliefCutoffPoliceBrain` design
 

@@ -16,6 +16,59 @@ Current, honest state as of this scaffold (Phase 1-2, no application code writte
 This file will be kept current every phase — never allowed to go stale while claiming
 a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
 
+## Current state (Implementation Batch 3.6)
+
+- A dedicated epistemic-fairness, scent-timing, capture-correctness, and
+  strategy-distinguishability audit was run on top of Batch 3.5's repair,
+  triggered by Batch 3.5's own headline result (100% Police capture / 0%
+  Thief survival in every matchup) being a **new ceiling tie in the
+  opposite direction** — technically successful, scientifically
+  inconclusive about strategy quality on its own.
+- **No exact-position leakage found**: a real 200-random-walk quantitative
+  simulation over production `domain.scent`/`domain.belief_updates` code
+  shows scent produces a uniquely-peaked candidate reading on 100% of
+  turns, but that peak matches the true opponent position only **30.5%**
+  of the time, and belief entropy barely drops (5.61 -> 5.36 bits) — a
+  confident-looking maximum-likelihood signal, not a leak of the true
+  cell. `integration_lab/evidence/batch3_6/epistemic_leakage_audit.md`.
+- **No hint-verdict early-visibility defect found**: the intent
+  (truth/lie) verdict is confirmed absent from the live `reveal` payload
+  and present/verifiable only at final audit, both by direct code
+  inspection and 3 new end-to-end tests.
+- **800-game multi-scale robustness check** (7x7 alt-start, 9x9, 11x11;
+  RESEARCH_ONLY, never replacing the binding 7x7 league config) confirms
+  the 100%-capture ceiling is a genuine **game-design property of this
+  board/geometry and greedy pursuit/evasion dynamics**, not a
+  7x7-specific implementation artifact — mean steps scale proportionally
+  with board size (12 -> 16 -> 20).
+- Real behavioral differences between baseline and advanced strategies
+  **do exist** even though they don't move the capture-rate ceiling: 6
+  deterministic action-divergence fixtures (no true-opponent-position
+  access), advanced Police's higher belief-entropy reduction (3.27 vs
+  2.48 bits) and barrier usage (6/game vs 0/game) on this batch's paired
+  seeds.
+- One process error was self-caught and disclosed: the existing (Batch
+  3.5-scoped) capture-sanity script regenerated Batch 3.5's evidence
+  files in place before being replaced with a properly-scoped Batch 3.6
+  version; content was verified materially identical. One real HTTP
+  series showed a transient sub-game failure (system-load-dependent,
+  reproduced 0 times on a clean rerun); both are disclosed in
+  `integration_lab/evidence/batch3_6/limitations.md` and
+  `.../real_http/transient_flake_note.md`.
+- Final classification: **C (genuine game-design ceiling, honestly
+  documented) with D (real behavioral differences exist) as a direct
+  corollary** — not A/B/E. See
+  `integration_lab/evidence/batch3_6/conclusion.md`.
+- Full evidence set: `integration_lab/evidence/batch3_6/` (scent-timing
+  contract with book page citations, leakage audit, hint-visibility
+  audit, causal ablation across 9 evidence-source conditions, capture-
+  correctness re-audit, 6 behavioral fixtures, secondary metrics, 800-game
+  robustness results, research/production equivalence, real HTTP series,
+  7 figures).
+- Readiness: `LOCAL_READY` (unchanged — Batch 3.6 is a fairness/
+  correctness audit on top of an already-`LOCAL_READY` baseline;
+  `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY` still not claimed).
+
 ## Current state (Implementation Batch 3.5)
 
 - The observation-pipeline defect identified in Batch 3 (below) is

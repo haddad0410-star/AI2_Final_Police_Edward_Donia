@@ -29,3 +29,15 @@ summarizes only what's specific to running this repo as the Police side.
   (actual stdout/stderr/exit codes from two independently-launched OS processes).
   A real two-process full game/series has NOT been run yet (explicitly out
   of scope through session recovery step B).
+
+**Note (this section describes Batch-1-era scope; the peer has since grown
+`receive_turn`/`submit_audit` and real multi-process series validation —
+see `integration_lab/audit/PROGRESS.md` for current status.)**
+
+**Scent field-name correction (Batch 3.6 Task 2):** `protocol_contract.md`
+§3.2's `scent_grid` field name is this project's own paraphrase of the
+book's prose description of the sealed record — a full-text search of the
+book PDF found no literal `scent_grid`/`smell_grid` field name anywhere.
+The underlying semantics (full-board cumulative decaying trail, sealed raw
+values not a digest) are still correctly implemented; only the exact
+identifier is ours. See `integration_lab/evidence/batch3_6/scent_timing_contract.md`.

@@ -20,6 +20,15 @@ convention. Every update draws only from: the current belief, a legal-transition
 function, a `ScentField` (public evidence), or a hint region (parsed natural-language
 evidence).
 
+This structural guarantee was quantitatively confirmed, not just
+structurally asserted, in Batch 3.6 Task 3: 200 real random walks x 35
+turns through this exact production code show scent alone produces a
+uniquely-peaked reading on 100% of turns, but that peak matches the
+opponent's true position only 30.5% of the time, and belief entropy barely
+drops (5.61 -> 5.36 bits) — a confident-looking maximum-likelihood signal,
+not an exact-position leak. See
+`integration_lab/evidence/batch3_6/epistemic_leakage_audit.md`.
+
 ## Pipeline (frozen, actually wired into the peer runtime as of Batch 3.5 Task 6)
 
 Implemented in `services/belief_update.py::advance_belief`, called once per

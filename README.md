@@ -1,6 +1,6 @@
 # AI2 Final Project — Police Peer (police_peer)
 
-**Status: Implementation Batch 3.5.** Batch 3 found that held-out/real-HTTP
+**Status: Implementation Batch 3.6.** Batch 3 found that held-out/real-HTTP
 evaluation showed no demonstrated capture-rate improvement for
 `BeliefCutoffPoliceBrain`, root-caused to a real observation-pipeline
 defect: the wire protocol never actually delivered scent/hint evidence to
@@ -16,9 +16,19 @@ capture-RATE improvement over baseline (both 100%), but does show a real,
 distinct barrier-driven capture mechanism (70% of captures against a
 baseline Thief) — reported honestly, see
 `integration_lab/evidence/batch3_5/strategy_research/acceptance_criteria_evaluation.md`.
-GUI, Gmail reporting, public network exposure, and league play are **not**
-implemented/run yet. Readiness: see
-`integration_lab/audit/PROGRESS.md` for the current level.
+**Batch 3.6** ran a dedicated fairness/correctness audit on top of this
+result — verified no exact-position leakage (a unique-looking scent peak
+matches the true position only 30.5% of the time), no hint-verdict
+early-visibility defect, correct capture-claim/survival-threshold boundary
+handling, and confirmed via an 800-game multi-scale robustness check that
+the ceiling is a genuine game-design property (persists at 7x7/9x9/11x11
+alike), while 6 deterministic fixtures proved real behavioral differences
+exist between baseline and advanced strategy regardless. Final
+classification: **C** (genuine ceiling) **with D** (real behavioral
+differences) **as a corollary** — see
+`integration_lab/evidence/batch3_6/conclusion.md`. GUI, Gmail reporting,
+public network exposure, and league play are **not** implemented/run yet.
+Readiness: see `integration_lab/audit/PROGRESS.md` for the current level.
 
 ## Abstract
 
@@ -71,9 +81,13 @@ shared protocol contract only (see `docs/PROTOCOL.md`).
   Uvicorn listening socket) was found and fixed — see `CHANGELOG.md`.
 - 305 tests, 96.53% coverage, 0 Ruff violations, every file ≤150 meaningful
   lines (Implementation Batch 3; see `integration_lab/evidence/batch3/quality/`).
-- **354 tests, 96.07% coverage, 0 Ruff violations, every file ≤150 meaningful
+- 354 tests, 96.07% coverage, 0 Ruff violations, every file ≤150 meaningful
   lines (Implementation Batch 3.5 — observation-pipeline repair; see
-  `integration_lab/evidence/batch3_5/quality/`).**
+  `integration_lab/evidence/batch3_5/quality/`).
+- **357 tests, 96.07% coverage, 0 Ruff violations, every file ≤150
+  meaningful lines (Implementation Batch 3.6 — epistemic fairness/scent
+  timing/capture correctness/strategy distinguishability audit; see
+  `integration_lab/evidence/batch3_6/`).**
 
 ## Session recovery step C (new)
 
