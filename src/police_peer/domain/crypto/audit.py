@@ -54,20 +54,30 @@ def _forfeit(reason: str, record: SealedRecord) -> AuditResult:
 
 
 def _check_sequence_contiguous(materialized: list[SealedRecord]) -> AuditResult | None:
-    """Reject a dropped or gapped step within any ``(sub_game, role)`` group.
+    """Reject a dropped, gapped, or reordered step within any ``(sub_game,
+    role)`` group.
 
-    The sealed ``step`` field self-identifies each record's position, so a mere
-    reordering of a complete set is not a tamper; a MISSING record, however,
-    leaves a gap and is caught here (a duplicate is caught earlier). This is why
-    no hash-chain is needed on the wire -- see docs/adr/ADR-0013.
+    Batch 4B Task 6: the sealed ``step`` field self-identifies each
+    record's logical position, but the log's LIST order must still match
+    it -- a reveal presented out of chronological order is a real protocol
+    violation (Thief's independently-built ``steps_in_order`` check
+    already caught this; this repo's own check had been limited to gap
+    detection on the sorted step set, silently tolerating reordering,
+    until the bilateral tamper matrix exposed the asymmetry and this fix
+    closed it). A MISSING record leaves a gap and is caught here too (a
+    duplicate is caught earlier). This is why no hash-chain is needed on
+    the wire -- see docs/adr/ADR-0013.
     """
     groups: dict[tuple[int, str], list[SealedRecord]] = {}
     for record in materialized:
         groups.setdefault((record.payload.sub_game_number, record.payload.role), []).append(record)
     for records in groups.values():
-        steps = sorted(r.payload.step for r in records)
+        observed = [r.payload.step for r in records]
+        steps = sorted(observed)
         if steps != list(range(steps[0], steps[0] + len(steps))):
             return _forfeit("sequence gap: a step record is missing/reordered out", records[0])
+        if observed != steps:
+            return _forfeit("reveal order does not match step order", records[0])
     return None
 
 

@@ -40,7 +40,7 @@ def build_payload(
         step=step,
         role=role.value,
         sub_game_number=sub_game_number,
-        state={"position": [destination.row, destination.col], "config_sha256": config_sha256},
+        position=(destination.row, destination.col),
         move=decision.direction.value,
         barrier_placed=barrier,
         intent=hint.intent.value,
@@ -50,6 +50,7 @@ def build_payload(
         capture_claim=(destination.row, destination.col),
         claim_response=None,
         win_claim=False,
+        config_sha256=config_sha256,
         timestamp=_now_iso(),
         nonce=generate_nonce(),
     )

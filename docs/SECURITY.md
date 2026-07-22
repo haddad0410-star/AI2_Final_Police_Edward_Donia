@@ -119,3 +119,60 @@ audit implementation is a later batch. This document will be updated again then.
   hashes — see `docs/LIMITATIONS.md`'s Batch 4A section for the full
   explanation and fix (never claim a verdict this repo cannot actually
   compute).
+
+## Batch 4B additions — bilateral commitment verification (resolves the
+## Batch 4A cross-schema finding above)
+
+- **Root cause, precisely identified**: the Batch 4A finding traced to two
+  narrow, mechanical field-shape divergences, not an inherent consequence
+  of independent implementation — this repo's `state` field was a nested
+  dict (`{"position": [...], "config_sha256": ...}`) while Thief's was an
+  opaque digest string, and `config_sha256` was nested inside `state` here
+  but a genuine top-level field in Thief. 14 of ~16 payload fields already
+  had identical shape. Both repos' canonical-JSON encoders were already
+  byte-identical. Full field-by-field audit:
+  `integration_lab/evidence/batch4b/commitment_schema_audit.md`.
+- **Canonical schema unified** (`domain/crypto/payload.py`,
+  `SCHEMA_VERSION = "commitment/1"`): `state` replaced by a flat
+  `position` tuple field; `config_sha256` promoted to a real top-level
+  field. `CANONICAL_FIELD_SET` (17 keys) is now identical in both repos.
+  `to_canonical_dict()` is schema-version-aware — legacy
+  `commit-reveal/1`/`/2` records still canonicalize to their EXACT
+  original shape, so all Batch 1-4A evidence remains self-verifiable
+  without rewriting any file on disk.
+- **Real bilateral verification, not just a shared schema on paper**:
+  because the field SET is now unified, this repo's EXISTING,
+  already-tested verification pipeline (`services/replay_verifier.py`,
+  `replay_checks.py`) correctly recomputes and verifies a genuine Thief
+  `commitment/1` record too — confirmed by 10 byte-identical cross-repo
+  test vectors (`integration_lab/evidence/batch4b/test_vectors/`), a
+  21-category bilateral tamper matrix where BOTH repos' own verifiers
+  independently detect every mutation
+  (`integration_lab/evidence/batch4b/tamper_matrix/`, `all_detected=true`),
+  and a real six-sub-game two-process FastMCP series where both sides'
+  `replay` command reports `FULL_BILATERAL_VERIFICATION=true`
+  (`integration_lab/evidence/batch4b/bilateral_series/`). This repo never
+  imports `thief_peer`; it only calls its own crypto/verifier on
+  whichever directory it's given (`services/bilateral_verify.py`).
+- **New role-consistency and unknown-field checks**
+  (`replay_checks.py::_check_role_fields`/`_check_unknown_fields`): a
+  Police record carrying a Thief-only `claim_response`/`win_claim` value
+  (or vice versa), or any `commitment/1` record carrying a field outside
+  the canonical set, is now flagged as tampered — closing a class of
+  forgery the schema-shape fix alone would not have caught.
+- **Real bug found and fixed via the tamper matrix**:
+  `domain/crypto/audit.py::_check_sequence_contiguous` had deliberately
+  tolerated step reordering (only gaps were checked) — an asymmetry
+  against Thief's own `steps_in_order` check, which does reject
+  reordering. Since tolerating a real tamper class is a weaker posture,
+  not a design choice this batch should preserve, the check was
+  strengthened to also reject reveal order that does not match step
+  order; verified via the bilateral tamper matrix's `record_ordering`
+  category (now `DETECTED` by both repos, was `MISSED` by this repo
+  before the fix).
+- **Gmail bilateral gate** (`sdk/report_runner.py`, Task 9): `report
+  --opponent-artifacts-dir <dir>` gates report construction (dry-run AND
+  `--send`) on full bilateral verification via
+  `services/bilateral_verify.py`, not merely this side's own
+  `verify_replay`. Real evidence, both accept and refuse paths:
+  `integration_lab/evidence/batch4b/gmail_bilateral_gate/`.

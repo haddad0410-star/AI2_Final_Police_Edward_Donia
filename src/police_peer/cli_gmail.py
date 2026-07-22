@@ -16,12 +16,13 @@ RATE_LIMITS_PATH = Path(__file__).resolve().parents[2] / "config" / "police" / "
 
 def report(args: argparse.Namespace) -> int:
     artifacts_dir = Path(args.artifacts_dir)
+    opponent_dir = Path(args.opponent_artifacts_dir) if args.opponent_artifacts_dir else None
     try:
         if not args.send:
-            result = run_dry_run(artifacts_dir)
+            result = run_dry_run(artifacts_dir, opponent_dir)
             print(json.dumps(result, indent=2))
             return 0
-        result = run_send(artifacts_dir, RATE_LIMITS_PATH)
+        result = run_send(artifacts_dir, RATE_LIMITS_PATH, opponent_dir)
         print(json.dumps(result, indent=2))
         return 0 if result.get("ok") else 1
     except ReportRefusedError as exc:

@@ -41,3 +41,17 @@ book PDF found no literal `scent_grid`/`smell_grid` field name anywhere.
 The underlying semantics (full-board cumulative decaying trail, sealed raw
 values not a digest) are still correctly implemented; only the exact
 identifier is ours. See `integration_lab/evidence/batch3_6/scent_timing_contract.md`.
+
+**Sealed-record schema unified as `commitment/1` (Batch 4B):** the sealed
+turn payload's field set is now identical in both repos (17 canonical
+fields, `domain/crypto/payload.py::CANONICAL_FIELD_SET`), replacing the
+prior per-repo `commit-reveal/2`/`sealed-turn/2` shapes that diverged in
+two mechanical ways (this repo's nested `state` dict vs. the opponent's
+opaque digest string; `config_sha256` placement). This is what makes
+genuine bilateral commitment verification possible — see
+`integration_lab/evidence/batch4b/commitment_schema_audit.md` and
+`docs/SECURITY.md`'s Batch 4B section. `protocol_contract.md` should be
+updated to reference `commitment/1` as the current binding sealed-record
+schema once both groups' contract is renegotiated with a real opponent;
+until then this is a same-project-internal schema unification, not yet a
+cross-team-negotiated protocol change.

@@ -51,7 +51,7 @@ def _payload(sub_game: int, step: int) -> SealedTurnPayload:
         step=step,
         role="police",
         sub_game_number=sub_game,
-        state={"position": [step % 7, 0]},
+        position=(step % 7, 0),
         move="N",
         barrier_placed=None,
         intent="truth",
@@ -61,6 +61,7 @@ def _payload(sub_game: int, step: int) -> SealedTurnPayload:
         capture_claim=(step % 7, 0),
         claim_response=None,
         win_claim=False,
+        config_sha256=sha256_hex(CONFIG_DIR / "game.json"),
         timestamp="2026-07-18T00:00:00+00:00",
         nonce=f"{sub_game:032x}{step:032x}",
     )

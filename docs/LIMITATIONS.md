@@ -27,12 +27,11 @@ a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
   commitment hashes (`sealed-turn/2` vs this repo's `commit-reveal/2`).
   Fixed by never claiming a verdict this repo's crypto module cannot
   actually compute — the opponent's side is loaded for display only,
-  honestly labeled `NOT_INDEPENDENTLY_VERIFIED_FROM_THIS_SIDE`. Each
-  side's replay viewer can only ever fully verify its own artifacts; a
-  true mutual cross-verification would need to run both repos' own
-  verifiers together (as `integration_lab/scripts/mutual_comparison.py`
-  and the new `package_match_evidence.py` already do at the workspace
-  level).
+  honestly labeled `NOT_INDEPENDENTLY_VERIFIED_FROM_THIS_SIDE`. **RESOLVED
+  in Batch 4B** — see below; this was a real, mechanical schema
+  divergence, fixable without cross-repo imports, not a fundamental limit.
+  A genuinely cross-repo LEGACY (pre-Batch-4B) record is still subject to
+  this limitation; see the Batch 4B section below for the precise scope.
 - The live GUI's "runtime latency" and "decision latency" figures are
   real measured values from this process, not simulated; the live GUI's
   "connection status" is derived from protocol-level exchange success/
@@ -52,6 +51,27 @@ a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
 - Readiness: `LOCAL_READY` (unchanged — Batch 4A adds local
   tooling/UI/reporting on top of an already-`LOCAL_READY` baseline;
   `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY` still not claimed).
+
+## Current state (Implementation Batch 4B)
+
+- **Bilateral commitment verification is now real, not display-only.**
+  Both repos' sealed field set is unified under a versioned
+  `commitment/1` schema (`domain/crypto/payload.py`); this repo's own
+  crypto module now correctly recomputes and verifies a genuine Thief
+  `commitment/1` record, and vice versa. `NOT_INDEPENDENTLY_VERIFIED_FROM_THIS_SIDE`
+  is now `NOT_INDEPENDENTLY_VERIFIED_FROM_THIS_SIDE_LEGACY_SCHEMA` and only
+  applies to genuinely pre-Batch-4B legacy records (Batch 1-4A evidence,
+  preserved unmodified on disk and still self-verifiable under its own
+  original schema) — never to a current `commitment/1` record. Full
+  evidence: `integration_lab/evidence/batch4b/` (schema audit, 10
+  byte-identical cross-repo test vectors, a 21-category bilateral tamper
+  matrix, a real six-sub-game two-process series with
+  `FULL_BILATERAL_VERIFICATION=true` both sides, and a bilaterally-gated
+  Gmail dry-run reporter).
+- Readiness: `LOCAL_READY` (unchanged — bilateral verification is a local
+  correctness property; `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY`
+  still not claimed. No public binding, OAuth, real Gmail send, GitHub
+  repo, or real opponent contact occurred in Batch 4B).
 
 ## Current state (Implementation Batch 3.6)
 

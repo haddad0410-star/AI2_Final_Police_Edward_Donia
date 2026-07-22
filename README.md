@@ -1,6 +1,7 @@
 # AI2 Final Project — Police Peer (police_peer)
 
-**Status: Implementation Batch 4A.** Readiness: `LOCAL_READY`.
+**Status: Implementation Batch 4B (bilateral commitment verification).**
+Readiness: `LOCAL_READY`.
 `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY` are **not** claimed — see
 `integration_lab/audit/PROGRESS.md` for the authoritative, up-to-date
 readiness record.

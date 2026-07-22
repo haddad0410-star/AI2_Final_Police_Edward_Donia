@@ -9,6 +9,17 @@ capture/survival outcomes) and confirmed it works — see
 replay verifiers report `VERIFIED`) — but taking the actual screenshots
 requires a human at the keyboard.
 
+**Batch 4B update**: the replay viewer now performs FULL BILATERAL
+verification (both sides' commitments independently recomputed by each
+repo's own crypto module under the unified `commitment/1` schema — see
+`integration_lab/evidence/batch4b/commitment_schema_audit.md`), so the
+valid-series banner text changed from a single-sided verdict to
+`VERIFIED — BOTH PEERS INDEPENDENTLY VERIFIED`. Captures 6–9 below point
+at the new real bilateral evidence
+(`integration_lab/evidence/batch4b/bilateral_series/`), not the Batch 4A
+evidence (which remains valid, preserved, legacy-schema evidence — still
+viewable, just not what these specific captures reference).
+
 ## Prerequisites
 
 Both commands below must run from the repo root, in two separate terminal
@@ -36,7 +47,7 @@ Both windows auto-close ~8 seconds after the game finishes
 that window, or click "Quit" only after you're done capturing (closing
 early on one side ends the other side's sub-game as a technical loss).
 
-## What to capture
+## What to capture (9 total)
 
 1. **Police live GUI, early game** — the board showing your own position/
    path, the "LIVE VIEW — OPPONENT TRUE POSITION HIDDEN" banner, and the
@@ -51,52 +62,72 @@ early on one side ends the other side's sub-game as a technical loss).
    `commit_sent`/`ack_received`/`reveal_sent`/`reveal_received` fields
    updating turn to turn (visible if you resize/inspect during play).
 5. **Capture/result banner** — the red banner turning into
-   "SUB-GAME OVER: CAPTURE" (or SURVIVAL/TECHNICAL LOSS) at game end.
+   "SUB-GAME OVER: CAPTURE" (or SURVIVAL/TECHNICAL LOSS) at game end. The
+   live window auto-closes ~8s after the game finishes
+   (`gui/tk_app.py`'s `AUTO_CLOSE_GRACE_MS`) — capture within that window.
 
-Save files here as `police_live_<description>.png`. Do not edit, crop out
-data, or stage a fake result — if a run ends in something other than
+Save files 1–5 here as `police_live_<description>.png`. Do not edit, crop
+out data, or stage a fake result — if a run ends in something other than
 capture, that is the real, honest outcome; save it as such.
 
-## Replay viewer captures
+## Replay viewer captures (bilateral series, Batch 4B)
 
 ```bash
 cd police_peer
 uv run python -m police_peer replay --gui \
-  --police-artifacts ../integration_lab/evidence/batch4a/gui_demo/six_subgame_series/police_artifacts \
-  --thief-artifacts ../integration_lab/evidence/batch4a/gui_demo/six_subgame_series/thief_artifacts
+  --police-artifacts ../integration_lab/evidence/batch4b/bilateral_series/police_artifacts \
+  --thief-artifacts ../integration_lab/evidence/batch4b/bilateral_series/thief_artifacts
 ```
 
-Capture: (a) the green "VERIFIED" banner, (b) the sub-game selector row,
-(c) a capture step showing both true paths converging, (d) a step with a
-barrier visible on the board.
+This window stays open until you click a control or close it (no
+auto-close) — take your time.
 
-### TAMPERED demonstration (already reproduced once, real — not staged)
+6. **Full bilateral verification banner** — the green
+   `VERIFIED — BOTH PEERS INDEPENDENTLY VERIFIED` banner (confirmed real
+   headless output: `integration_lab/evidence/batch4b/bilateral_series/bilateral_checks.json`).
+7. **Sub-game selector + a capture step** — the selector row across all 6
+   real sub-games, with a capture step selected showing both true paths
+   converging.
+8. **Barrier visible on the board** — any step where Police placed a
+   barrier during the real series (`barrier_count` per sub-game is in
+   `integration_lab/evidence/batch4b/bilateral_series/summary.json`).
 
-Claude already ran this for real: `integration_lab/evidence/batch4a/replay_demo/`
-contains a COPY of the real six-sub-game evidence with one field
-(`steps[0].move`) edited in the copy only — the original evidence under
-`integration_lab/evidence/batch4a/gui_demo/` was never touched (still
-verifies `VERIFIED`, confirmed directly). Reproduce the screenshot with:
+### 9. TAMPERED demonstration (real, not staged)
+
+`integration_lab/evidence/batch4b/bilateral_series/tampered_copy/`
+contains a COPY of the real bilateral series with one field
+(`steps[0].move` in `police_artifacts`) edited in the copy only — the
+original evidence under `bilateral_series/` was never touched (still
+verifies `VERIFIED`, confirmed directly, both directions). Reproduce:
 
 ```bash
 cd police_peer
 uv run python -m police_peer replay --gui \
-  --police-artifacts ../integration_lab/evidence/batch4a/replay_demo/police_artifacts_TAMPERED_COPY \
-  --thief-artifacts ../integration_lab/evidence/batch4a/replay_demo/thief_artifacts_COPY
+  --police-artifacts ../integration_lab/evidence/batch4b/bilateral_series/tampered_copy/police_artifacts \
+  --thief-artifacts ../integration_lab/evidence/batch4b/bilateral_series/tampered_copy/thief_artifacts
 ```
 
-Real headless output (`integration_lab/evidence/batch4a/replay_demo/tampered_demo_output.txt`):
+Real headless output (confirmed identical via the actual Tkinter
+`VerdictBanner` widget, see
+`integration_lab/evidence/batch4b/graphical_replay_regression/README.md`):
 ```
 REPLAY VERDICT: TAMPERED
+FULL_BILATERAL_VERIFICATION=false
+police: independently_verified=True verdict=TAMPERED
+thief: independently_verified=True verdict=VERIFIED
   - sub-game 1: commitment hash mismatch (tamper) (step 0)
 ```
-Capture the red "TAMPERED" banner with this finding listed. Never edit or
-replace the original, valid evidence to produce this — always work on a
-fresh copy.
+Capture the red `TAMPERED — TAMPERED` banner with this finding listed.
+Never edit or replace the original, valid evidence to produce this —
+always work on a fresh copy.
+
+Save files 6–9 here as `police_replay_<description>.png`.
 
 ## Reproducibility
 
-Exact real-process evidence (no GUI needed to reproduce the underlying
-game) is at `integration_lab/evidence/batch4a/gui_demo/` — commands,
-stdout/stderr, exit codes, and artifact paths for both a smoke sub-game and
-a full six-sub-game series, both run with `--gui` for real.
+Real two-independent-process evidence (no GUI needed to reproduce the
+underlying game) is at `integration_lab/evidence/batch4b/bilateral_series/`
+(current, bilateral-schema series: commands, PIDs, stdout/stderr, exit
+codes, both sides' replay-verify output, bilateral cross-verification
+checks) and `integration_lab/evidence/batch4a/gui_demo/` (preserved
+legacy-schema evidence from Batch 4A).

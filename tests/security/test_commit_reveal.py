@@ -33,7 +33,7 @@ def _payload(**overrides) -> SealedTurnPayload:
         "step": 3,
         "role": "police",
         "sub_game_number": 1,
-        "state": {"position": [0, 0], "config_sha256": "cafef00d"},
+        "position": (0, 0),
         "move": "N",
         "barrier_placed": None,
         "intent": "truth",
@@ -43,6 +43,7 @@ def _payload(**overrides) -> SealedTurnPayload:
         "capture_claim": None,
         "claim_response": None,
         "win_claim": False,
+        "config_sha256": "cafef00d",
         "timestamp": "2026-07-18T00:00:00+00:00",
         "nonce": FIXED_NONCE,
     }
@@ -85,17 +86,21 @@ def test_each_field_mutation_is_detected() -> None:
         "nonce": "ff" * 32,
         "claim_response": True,
         "win_claim": True,
+        "position": (5, 5),
+        "config_sha256": "deadbeef",
     }
     for field, value in mutations.items():
         mutated = dataclasses.replace(original, **{field: value})
         assert verify_commit(mutated, original_hash) is False, field
 
 
-def test_config_hash_mutation_inside_state_is_detected() -> None:
+def test_config_sha256_mutation_is_detected() -> None:
+    """config_sha256 is now a real top-level field (Batch 4B Task 3 --
+    previously nested inside `state`, the primary source of the
+    Police/Thief cross-schema divergence)."""
     original = _payload()
     original_hash = compute_commit_hash(original)
-    tampered_state = {"position": [0, 0], "config_sha256": "deadbeef"}
-    mutated = dataclasses.replace(original, state=tampered_state)
+    mutated = dataclasses.replace(original, config_sha256="deadbeef")
     assert verify_commit(mutated, original_hash) is False
 
 

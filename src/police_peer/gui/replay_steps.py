@@ -39,9 +39,15 @@ class ReplaySubGame:
 
 
 def _position(step_dict: dict) -> tuple[int, int] | None:
-    """Handles both independently-built state-digest shapes: Police's
-    ``{"position": [r, c], ...}`` dict and Thief's ``"pos=R,C;visited=N"``
-    string -- a public JSON-artifact-format parse, not a code import."""
+    """Handles the current ``commitment/1`` top-level ``position`` field
+    (both roles, since Batch 4B Task 3 unified the schema) and both legacy
+    per-repo shapes for old evidence: Police's old
+    ``state={"position": [r, c], ...}`` dict and Thief's old
+    ``state="pos=R,C;visited=N"`` string -- a public JSON-artifact-format
+    parse, not a code import."""
+    if "position" in step_dict and step_dict["position"] is not None:
+        row, col = step_dict["position"]
+        return (row, col)
     state = step_dict.get("state")
     if isinstance(state, dict) and "position" in state:
         row, col = state["position"]

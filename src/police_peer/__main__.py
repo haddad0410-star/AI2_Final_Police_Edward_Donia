@@ -83,6 +83,13 @@ def _replay(args: argparse.Namespace) -> int:
     if not args.gui:
         model = build_replay_view(police_dir, thief_dir)
         print(f"REPLAY VERDICT: {model.verdict}")
+        print(f"FULL_BILATERAL_VERIFICATION={str(model.full_bilateral_verification).lower()}")
+        print(
+            f"police: independently_verified={model.police.independently_verified} verdict={model.police.verdict}"
+        )
+        print(
+            f"thief: independently_verified={model.thief.independently_verified} verdict={model.thief.verdict}"
+        )
         for f in (*model.police.findings, *model.thief.findings):
             print(f"  - {f}")
         return 0 if model.verification_ok else 2
@@ -138,6 +145,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
     report = subparsers.add_parser("report", help="Gmail report (dry-run by default)")
     report.add_argument("--artifacts-dir", required=True)
+    report.add_argument(
+        "--opponent-artifacts-dir",
+        default=None,
+        help="opponent's artifacts dir -- gates the report on full bilateral verification (Batch 4B)",
+    )
     report.add_argument("--send", action="store_true", help="real send (requires credentials)")
     return parser
 

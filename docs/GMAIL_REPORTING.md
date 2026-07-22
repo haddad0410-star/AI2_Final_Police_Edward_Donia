@@ -65,6 +65,19 @@ tampered or incomplete evidence. Tested:
 `tests/unit/test_report_runner.py`; real demonstration:
 `integration_lab/evidence/batch4a/gmail_dry_run/invalid_report_rejection.json`.
 
+### Batch 4B: bilateral verification gate
+
+`report --artifacts-dir <own> --opponent-artifacts-dir <opponent>` (both
+`report` and `report --send`) gates on FULL BILATERAL verification via
+`services/bilateral_verify.py::verify_bilateral` instead of the
+single-sided check above — both sides must be independently verified AND
+both `VERIFIED`, not just this side's own artifacts. Without
+`--opponent-artifacts-dir`, the single-sided gate above still applies
+(strictly more conservative, never less). Real evidence (accept and
+refuse paths, real bilateral series from Task 7):
+`integration_lab/evidence/batch4b/gmail_bilateral_gate/`. Tested:
+`tests/unit/test_report_runner.py::test_bilateral_gate_*`.
+
 ## Rate limiting (Gatekeeper)
 
 `infrastructure/gmail_gatekeeper.py::Gatekeeper`, built on the existing

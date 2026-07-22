@@ -19,7 +19,7 @@ def _payload(intent: str = "lie") -> SealedTurnPayload:
         step=0,
         role="police",
         sub_game_number=1,
-        state={"position": [0, 0]},
+        position=(0, 0),
         move="N",
         barrier_placed=None,
         intent=intent,
@@ -29,6 +29,7 @@ def _payload(intent: str = "lie") -> SealedTurnPayload:
         capture_claim=None,
         claim_response=None,
         win_claim=False,
+        config_sha256="f" * 64,
         timestamp="2026-07-18T00:00:00+00:00",
         nonce="e" * 64,
     )

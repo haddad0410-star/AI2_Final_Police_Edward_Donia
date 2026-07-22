@@ -1,11 +1,18 @@
-"""Batch 4A Task 7/8: headless tests for the graphical replay viewer's data
-layer and playback navigation. No Tkinter import anywhere in this file.
-Uses the SAME real artifact-writing helpers as
-``tests/security/test_replay_verifier.py`` (Police's own crypto module) so
-the "clean bundle" fixture is genuinely sealed/hashed, not hand-faked, and
-Thief's fixture uses Thief's own real ``sealed-turn/2`` shape (a plain dict
-this test constructs directly, mirroring real Thief artifacts observed in
-Batch 4A's real GUI demo -- see integration_lab/evidence/batch4a/gui_demo/).
+"""Batch 4B Task 3/4: headless tests for the graphical replay viewer's data
+layer and playback navigation, now covering FULL BILATERAL verification.
+No Tkinter import anywhere in this file.
+
+Both the Police and "Thief" fixtures below are built with THIS repo's own
+real crypto module (``SealedRecord``/``compute_commit_hash``) using the
+current ``commitment/1`` canonical schema -- this is realistic: after
+Batch 4B Task 3 unified the sealed field set, a genuinely Thief-produced
+``commitment/1`` record is byte-for-byte reconstructable by Police's own
+verifier (same field set, same shared canonical-JSON algorithm), so using
+Police's own crypto module to build a role="thief" fixture exercises
+EXACTLY the same code path Police's verifier will exercise against a real
+Thief artifact. A separate legacy-schema fixture (old ``sealed-turn/2``
+shape) proves the pre-Batch-4B display-only fallback still works for old
+evidence.
 """
 
 from __future__ import annotations
@@ -38,33 +45,37 @@ N_GAMES = 2
 STEPS_PER_GAME = 3
 
 
-def _police_payload(sub_game: int, step: int) -> SealedTurnPayload:
+def _payload(role: str, sub_game: int, step: int, *, col_offset: int = 0) -> SealedTurnPayload:
     return SealedTurnPayload(
         step=step,
-        role="police",
+        role=role,
         sub_game_number=sub_game,
-        state={"position": [step, 0]},
-        move="S",
-        barrier_placed=[2, 2] if step == 1 else None,
+        position=(step, col_offset),
+        move="S" if role == "police" else "E",
+        barrier_placed=[2, 2] if (role == "police" and step == 1) else None,
         intent="truth",
-        hint="south looks fine",
+        hint="south looks fine" if role == "police" else "east looks fine",
         scent_digest="d" * 64,
         scent_grid=((0.0, 0.0), (0.0, 0.0)),
-        capture_claim=(step, 0),
-        claim_response=None,
+        capture_claim=(step, col_offset) if role == "police" else None,
+        claim_response=True if role == "thief" else None,
         win_claim=False,
+        config_sha256=sha256_hex(CONFIG_DIR / "game.json"),
         timestamp="2026-07-18T00:00:00+00:00",
-        nonce=f"{sub_game:032x}{step:032x}",
+        nonce=f"{sub_game:032x}{step:032x}{role[0]}",
     )
 
 
-def _write_police_bundle(directory: Path) -> None:
+def _write_bundle(directory: Path, role: str, winner: str, *, col_offset: int = 0) -> None:
     with open(CONFIG_DIR / "game.json", encoding="utf-8") as handle:
         terms = json.load(handle)
     config_sha = sha256_hex(CONFIG_DIR / "game.json")
     for n in range(1, N_GAMES + 1):
         recs = tuple(
-            SealedRecord(_police_payload(n, s), compute_commit_hash(_police_payload(n, s)))
+            SealedRecord(
+                _payload(role, n, s, col_offset=col_offset),
+                compute_commit_hash(_payload(role, n, s, col_offset=col_offset)),
+            )
             for s in range(STEPS_PER_GAME)
         )
         save_artifact(
@@ -81,15 +92,25 @@ def _write_police_bundle(directory: Path) -> None:
     )
     result = build_result_artifact(UID, GID, "deadbeef", GID, config_sha, series)
     save_artifact(result, directory / result_filename(GID))
-    decl = {"schema_version": "declaration/1", "game_uid": UID, "game_id": GID, "role": "police"}
+    decl = {"schema_version": "declaration/1", "game_uid": UID, "game_id": GID, "role": role}
     (directory / f"declaration_{GID}.json").write_bytes(canonical_json_bytes(decl) + b"\n")
 
 
+def _write_police_bundle(directory: Path) -> None:
+    _write_bundle(directory, "police", "police", col_offset=0)
+
+
 def _write_thief_bundle(directory: Path) -> None:
-    """A real Thief-shaped bundle (string ``state``, ``sealed-turn/2``) --
-    Thief's OWN crypto module is a different repo, so this test constructs
-    the plain-dict artifact shape directly, matching real observed Thief
-    output (see the module docstring)."""
+    """A real, cryptographically-valid ``commitment/1`` Thief-shaped
+    bundle -- built with Police's own crypto module (see module docstring
+    for why this is a realistic proxy for a genuine Thief artifact)."""
+    _write_bundle(directory, "thief", "police", col_offset=1)
+
+
+def _write_legacy_thief_bundle(directory: Path) -> None:
+    """A real Thief-shaped bundle using the OLD ``sealed-turn/2`` schema
+    (string ``state``, no top-level ``position``/``config_sha256``) --
+    proves the pre-Batch-4B legacy fallback still works honestly."""
     with open(CONFIG_DIR / "game.json", encoding="utf-8") as handle:
         terms = json.load(handle)
     config_sha = sha256_hex(CONFIG_DIR / "game.json")
@@ -180,20 +201,56 @@ def _model(tmp_path: Path):
     return build_replay_view(police_dir, thief_dir)
 
 
-def test_valid_six_sub_game_like_set_verified(tmp_path) -> None:
+def test_valid_six_sub_game_like_set_fully_bilaterally_verified(tmp_path) -> None:
     model = _model(tmp_path)
     assert model.verdict == "VERIFIED"
     assert model.verification_ok is True
+    assert model.full_bilateral_verification is True
     assert len(model.sub_games) == N_GAMES
 
 
-def test_thief_side_is_honestly_not_independently_verified(tmp_path) -> None:
-    """The real cross-schema bug found while building this viewer: Police's
-    own engine cannot correctly verify Thief's differently-shaped
-    artifacts, so it must never claim VERIFIED or TAMPERED for that side."""
+def test_both_sides_independently_verified(tmp_path) -> None:
+    """The real fix this batch delivers: Police's OWN verifier can now
+    correctly recompute a Thief-shaped commitment/1 record's hash -- no
+    display-only exception for current-schema records (Rule 9)."""
     model = _model(tmp_path)
-    assert model.thief.independently_verified is False
     assert model.police.independently_verified is True
+    assert model.police.verdict == "VERIFIED"
+    assert model.thief.independently_verified is True
+    assert model.thief.verdict == "VERIFIED"
+
+
+def test_legacy_opponent_schema_still_uses_documented_fallback(tmp_path) -> None:
+    """Rule 10: a LEGACY (pre-commitment/1) opponent record may still be
+    display-only, honestly labeled -- never silently claimed VERIFIED."""
+    police_dir, thief_dir = tmp_path / "police", tmp_path / "thief"
+    police_dir.mkdir()
+    thief_dir.mkdir()
+    _write_police_bundle(police_dir)
+    _write_legacy_thief_bundle(thief_dir)
+    model = build_replay_view(police_dir, thief_dir)
+    assert model.thief.independently_verified is False
+    assert "LEGACY_SCHEMA" in model.thief.verdict
+    assert model.full_bilateral_verification is False
+
+
+def test_tampered_thief_commitment_is_detected_by_police(tmp_path) -> None:
+    """The other real fix: Police's verifier must actually DETECT a
+    tampered Thief commitment/1 record, not just fail to crash."""
+    police_dir, thief_dir = tmp_path / "police", tmp_path / "thief"
+    police_dir.mkdir()
+    thief_dir.mkdir()
+    _write_police_bundle(police_dir)
+    _write_thief_bundle(thief_dir)
+    log_path = thief_dir / log_filename(GID, 1)
+    data = json.loads(log_path.read_text())
+    data["steps"][0]["move"] = "N"  # tamper after sealing
+    log_path.write_text(json.dumps(data))
+    model = build_replay_view(police_dir, thief_dir)
+    assert model.thief.independently_verified is True
+    assert model.thief.verdict == "TAMPERED"
+    assert model.full_bilateral_verification is False
+    assert model.verification_ok is False
 
 
 def test_both_true_paths_present(tmp_path) -> None:

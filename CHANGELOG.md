@@ -5,6 +5,34 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added — Implementation Batch 4B (bilateral commitment verification)
+
+- **Unified `commitment/1` sealed-record schema** (`domain/crypto/payload.py`):
+  resolves the Batch 4A cross-schema finding — `state` (nested dict)
+  replaced by a flat `position` field, `config_sha256` promoted to a real
+  top-level field. Schema-version-aware `to_canonical_dict()` keeps all
+  Batch 1-4A evidence self-verifiable unmodified.
+- **Real bilateral verification**: `services/bilateral_verify.py` (new,
+  shared by the GUI replay viewer and the Gmail report gate) lets this
+  repo's own crypto module independently verify a genuine Thief
+  `commitment/1` record, no cross-repo import. New role-consistency
+  (`_check_role_fields`) and unknown-field (`_check_unknown_fields`)
+  checks in `services/replay_checks.py`.
+- **Fixed a real gap found via the bilateral tamper matrix**:
+  `domain/crypto/audit.py::_check_sequence_contiguous` now also rejects a
+  reveal order that doesn't match step order (previously tolerated pure
+  reordering — an asymmetry against Thief's own stricter check).
+  `verdict-banner` now shows `VERIFIED — BOTH PEERS INDEPENDENTLY VERIFIED`
+  when both sides are fully bilaterally verified.
+- **Gmail report bilateral gate**: `report --opponent-artifacts-dir <dir>`
+  refuses to build a report unless full bilateral verification passes.
+- Evidence: `integration_lab/evidence/batch4b/` — schema audit, 10
+  byte-identical cross-repo test vectors, a 21-category bilateral tamper
+  matrix (all detected, both directions), a real six-sub-game two-process
+  FastMCP series with `FULL_BILATERAL_VERIFICATION=true` both sides, and
+  bilaterally-gated Gmail dry-run evidence.
+- 445 tests, 0 Ruff violations, all files <=150 meaningful lines.
+
 ### Added — Implementation Batch 4A (live GUI, replay viewer, Gmail
 ### dry-run reporting, public-network preparation)
 

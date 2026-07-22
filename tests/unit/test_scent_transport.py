@@ -29,7 +29,7 @@ def _payload(scent_grid) -> SealedTurnPayload:
         step=0,
         role="police",
         sub_game_number=1,
-        state={"position": [0, 0]},
+        position=(0, 0),
         move="N",
         barrier_placed=None,
         intent="truth",
@@ -39,6 +39,7 @@ def _payload(scent_grid) -> SealedTurnPayload:
         capture_claim=(0, 0),
         claim_response=None,
         win_claim=False,
+        config_sha256="c" * 64,
         timestamp="2026-07-18T00:00:00+00:00",
         nonce="a" * 64,
     )
@@ -181,11 +182,18 @@ def test_impossible_cells_remain_zero_after_scent_update() -> None:
 
 
 def test_no_exact_position_field_on_reveal() -> None:
+    """``position`` in a reveal is always THIS peer's own, already-committed
+    cell (Batch 4B: a real top-level field, part of the ``commitment/1``
+    canonical schema) -- not a leak, since ``capture_claim`` already
+    reveals the identical coordinate every turn by design (the public "am
+    I on you?" claim). The real invariant is that no OPPONENT-position
+    field ever exists."""
     field = apply_turn(empty_scent_field(GRID), Position(1, 1), 0.10)
     reveal = _payload(field.grid).public_reveal_dict()
-    assert "position" not in reveal
+    assert reveal["position"] == [0, 0]  # this peer's own cell (fixed in _payload), expected
     assert "true_position" not in reveal
     assert "opponent_true_position" not in reveal
+    assert "opponent_position" not in reveal
 
 
 def test_no_true_position_inference_shortcut_in_opponent_reveal() -> None:
