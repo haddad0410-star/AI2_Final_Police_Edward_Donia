@@ -10,9 +10,11 @@ selection is still pure Python; no LLM, no network.
 from __future__ import annotations
 
 import os
+import time
 
 from police_peer.domain.positions import Direction, Position
 from police_peer.strategy.base import PoliceBrainBase
+from police_peer.strategy.baseline_police_brain import BaselinePoliceBrain
 from police_peer.strategy.decision import Decision, DecisionRequest
 
 
@@ -38,3 +40,21 @@ class ScriptedPoliceBrain(PoliceBrainBase):
         row = int(os.environ["SCRIPTED_POLICE_BARRIER_ROW"])
         col = int(os.environ["SCRIPTED_POLICE_BARRIER_COL"])
         return Position(row, col)
+
+
+class DelayedPoliceBrain(PoliceBrainBase):
+    """Batch 4A Task 2: wraps the real ``BaselinePoliceBrain`` decision with
+    a fixed, bounded ``time.sleep`` (``SCRIPTED_POLICE_DELAY_SECONDS``,
+    default 3s) before returning -- diagnostic-only, used to prove the real
+    deadline/watchdog machinery tolerates a slow-but-legal decision that
+    stays under ``response_timeout_sec``. Never used in league play, never
+    part of the shipped strategy set. The move itself is unmodified real
+    baseline logic; only the timing is injected."""
+
+    def __init__(self) -> None:
+        self._inner = BaselinePoliceBrain()
+
+    def _pick_move(self, request: DecisionRequest) -> Decision:
+        delay = float(os.environ.get("SCRIPTED_POLICE_DELAY_SECONDS", "3"))
+        time.sleep(delay)
+        return self._inner._pick_move(request)

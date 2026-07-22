@@ -5,6 +5,9 @@ Commands:
 - ``run-subgame``       : run one sub-game against a live opponent (Phase 9).
 - ``run-series``        : run the full 6-game series (``--smoke`` = 1 game) (Phase 10).
 - ``verify-replay``     : headless artifact verifier, VERIFIED/TAMPERED (Phase 12).
+- ``peer``              : run a series with ``--gui``/``--no-gui`` (Batch 4A).
+- ``replay``            : graphical/headless post-game replay viewer (Batch 4A).
+- ``report``            : Gmail dry-run report (``--send`` for a real send; Batch 4A).
 
 Business logic lives in the SDK/services layers; this file only parses args and
 routes to them.
@@ -18,6 +21,7 @@ import json
 import sys
 from pathlib import Path
 
+from police_peer import cli_gmail
 from police_peer.domain.roles import Role
 from police_peer.sdk.game_runner import (
     print_summary,
@@ -55,12 +59,39 @@ def _run_series(args: argparse.Namespace) -> int:
     return summary_exit_code(summary)
 
 
+def _peer(args: argparse.Namespace) -> int:
+    if not args.gui:  # default, and explicit --no-gui, both land here
+        return _run_series(args)
+    from police_peer.sdk.gui_runner import run_gui
+
+    artifacts_dir = Path(args.artifacts_dir) if args.artifacts_dir else None
+    return run_gui(Path(args.config_dir), args.opponent_url, args.smoke, artifacts_dir)
+
+
 def _verify_replay(args: argparse.Namespace) -> int:
     report = verify_replay(Path(args.artifacts))
     print(report.verdict)
     for finding in report.findings:
         print(f"  - {finding}")
     return 0 if report.ok else 2
+
+
+def _replay(args: argparse.Namespace) -> int:
+    from police_peer.gui.replay_view_model import build_replay_view
+
+    police_dir, thief_dir = Path(args.police_artifacts), Path(args.thief_artifacts)
+    if not args.gui:
+        model = build_replay_view(police_dir, thief_dir)
+        print(f"REPLAY VERDICT: {model.verdict}")
+        for f in (*model.police.findings, *model.thief.findings):
+            print(f"  - {f}")
+        return 0 if model.verification_ok else 2
+    from police_peer.gui.tk_replay_app import ReplayApp
+
+    app = ReplayApp(police_dir, thief_dir)
+    ok = app.model.verification_ok
+    app.run()
+    return 0 if ok else 2
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -90,6 +121,24 @@ def _build_parser() -> argparse.ArgumentParser:
 
     verify = subparsers.add_parser("verify-replay", help="Verify an artifact directory")
     verify.add_argument("--artifacts", required=True, help="directory of JSON artifacts")
+
+    peer = subparsers.add_parser("peer", help="Run a series with a live GUI (Batch 4A)")
+    gui_group = peer.add_mutually_exclusive_group()
+    gui_group.add_argument("--gui", action="store_true", help="launch the live Tkinter view")
+    gui_group.add_argument("--no-gui", action="store_true", help="headless (default)")
+    peer.add_argument("--smoke", action="store_true", help="single-game SMOKE TEST ONLY")
+    peer.add_argument("--config-dir", default=str(CONFIG_DIR))
+    peer.add_argument("--opponent-url", default=default_url)
+    peer.add_argument("--artifacts-dir", default=None)
+
+    replay = subparsers.add_parser("replay", help="Graphical/headless post-game replay viewer")
+    replay.add_argument("--gui", action="store_true", help="launch the graphical replay viewer")
+    replay.add_argument("--police-artifacts", required=True)
+    replay.add_argument("--thief-artifacts", required=True)
+
+    report = subparsers.add_parser("report", help="Gmail report (dry-run by default)")
+    report.add_argument("--artifacts-dir", required=True)
+    report.add_argument("--send", action="store_true", help="real send (requires credentials)")
     return parser
 
 
@@ -103,6 +152,12 @@ def main() -> None:
         sys.exit(_run_series(args))
     if args.command == "verify-replay":
         sys.exit(_verify_replay(args))
+    if args.command == "peer":
+        sys.exit(_peer(args))
+    if args.command == "replay":
+        sys.exit(_replay(args))
+    if args.command == "report":
+        sys.exit(cli_gmail.report(args))
     raise NotImplementedError(f"command {args.command!r} is not implemented yet")
 
 

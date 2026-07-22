@@ -11,21 +11,16 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 
-from police_peer.domain.actions import MoveAction
 from police_peer.domain.captures import SubGameResult
 from police_peer.domain.crypto import SealedRecord, SealedTurnSession
-from police_peer.domain.deadline import DeadlineTracker
-from police_peer.domain.hint_region import region_for_intent
-from police_peer.domain.hints import HintIntent
-from police_peer.domain.rules import apply_move, is_legal_barrier_cell, legal_move_directions
-from police_peer.domain.scent import apply_turn
 from police_peer.domain.state_machine import EventKind, PeerStateMachine, TransitionEvent
+from police_peer.services import turn_gui_publish as gui
 from police_peer.services import turn_trace
-from police_peer.services.belief_update import advance_belief
 from police_peer.services.capture_resolution import ingest_opponent_reveal, is_capture_confirmed
 from police_peer.services.outcomes import SubGameRunResult
 from police_peer.services.subgame_state import RuntimeState
 from police_peer.services.transport import OpponentTransport, TechnicalFailure
+from police_peer.services.turn_decide import DecideDeps, decide_turn
 from police_peer.services.turn_payload import (
     build_payload,
     commitment_message,
@@ -33,7 +28,6 @@ from police_peer.services.turn_payload import (
     reveal_message,
 )
 from police_peer.strategy.base import PoliceBrainBase
-from police_peer.strategy.decision import DecisionRequest
 from police_peer.strategy.hint_templates import TemplateHintProvider
 
 E = EventKind
@@ -55,44 +49,15 @@ class SubGameContext:
     decay: float
     response_timeout_sec: float
 
-
-def _decide_turn(ctx: SubGameContext, state: RuntimeState):
-    belief_before = state.belief
-    state = advance_belief(state)
-    legal = legal_move_directions(state.position, state.board)
-    request = DecisionRequest(
-        own_position=state.position,
-        legal_directions=legal,
-        belief=state.belief,
-        step=state.step,
-        rng=ctx.rng,
-        deadline=DeadlineTracker(ctx.response_timeout_sec).start(),
-        board=state.board,
-        barriers_remaining=state.barriers_remaining,
-        visited=state.visited,
-    )
-    decision = ctx.brain.decide(request)
-    if (
-        decision.barrier is not None
-        and state.barriers_remaining > 0
-        and is_legal_barrier_cell(state.position, decision.barrier, state.board)
-    ):
-        state = state.with_barrier_placed(decision.barrier)
-    destination = apply_move(state.position, MoveAction(decision.direction), state.board)
-    intent = HintIntent.TRUTH if decision.honest_intent else HintIntent.LIE
-    region = region_for_intent(decision.direction, intent, ctx.rng)
-    hint = ctx.hint_provider.generate(intent, ctx.rng, region=region)
-    new_scent = apply_turn(state.own_scent, destination, ctx.decay)
-    turn_trace.record_decide_turn(
-        state=state,
-        belief_before=belief_before,
-        brain=ctx.brain,
-        decision=decision,
-        intent=intent,
-        hint=hint,
-        new_scent=new_scent,
-    )
-    return state, decision, destination, hint, new_scent
+    def decide_deps(self) -> DecideDeps:
+        return DecideDeps(
+            brain=self.brain,
+            hint_provider=self.hint_provider,
+            transport=self.transport,
+            rng=self.rng,
+            decay=self.decay,
+            response_timeout_sec=self.response_timeout_sec,
+        )
 
 
 def _result(result: SubGameResult, state: RuntimeState, reason: str, records) -> SubGameRunResult:
@@ -117,12 +82,13 @@ async def run_sub_game(ctx: SubGameContext) -> SubGameRunResult:
     """
     machine = ctx.machine
     state = ctx.state
+    deps = ctx.decide_deps()
     records: list[SealedRecord] = []
     sequence_id = 0
     for _ in range(ctx.max_moves):
         try:
             machine.require(TransitionEvent.of(E.BEGIN_THINKING))
-            state, decision, destination, hint, new_scent = _decide_turn(ctx, state)
+            state, decision, destination, hint, new_scent = decide_turn(deps, state)
             payload = build_payload(
                 role=state.role,
                 step=state.step,
@@ -145,6 +111,10 @@ async def run_sub_game(ctx: SubGameContext) -> SubGameRunResult:
             opponent = await ctx.transport.exchange_turn(commit_msg, reveal_msg)
             if isinstance(opponent, TechnicalFailure):
                 machine.fail(opponent.reason)
+                gui.exchange_failed(state, ctx.config_sha256, machine.state.value)
+                gui.result_for(
+                    state, "technical_loss", opponent.reason, records, machine.state.value
+                )
                 return _result(SubGameResult.TECHNICAL_LOSS, state, opponent.reason, records)
             session.acknowledge()
             machine.require(TransitionEvent.of(E.ACK_RECEIVED))
@@ -155,15 +125,21 @@ async def run_sub_game(ctx: SubGameContext) -> SubGameRunResult:
             turn_trace.record_turn_exchange(
                 state=state, commit_hash=commit_hash, payload=payload, opponent=opponent
             )
+            gui.exchange_ok(state, opponent.hint, ctx.config_sha256, machine.state.value)
             records.append(session.audit_reveal())
             sequence_id += 2
             if is_capture_confirmed(opponent):
                 machine.require(TransitionEvent.of(E.SUB_GAME_ENDED))
+                gui.result_for(state, "capture", "capture confirmed", records, machine.state.value)
                 return _result(SubGameResult.CAPTURE, state, "capture confirmed", records)
             machine.require(TransitionEvent.of(E.TURN_VERIFIED))
             state = state.advanced_step()
         except Exception as exc:  # any runtime fault is a technical loss, never a hang
             machine.fail(str(exc))
+            gui.result_for(
+                state, "technical_loss", f"runtime error: {exc}", records, machine.state.value
+            )
             return _result(SubGameResult.TECHNICAL_LOSS, state, f"runtime error: {exc}", records)
     machine.require(TransitionEvent.of(E.SUB_GAME_ENDED))
+    gui.result_for(state, "survival", "thief survived move limit", records, machine.state.value)
     return _result(SubGameResult.SURVIVAL, state, "thief survived move limit", records)
