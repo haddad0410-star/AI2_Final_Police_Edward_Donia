@@ -11,7 +11,7 @@ end-of-game audit that recomputes every hash.
 ## Secrets handling
 
 - `credentials.json` / `token.json` live outside this repository, path supplied via
-  `GMAIL_CREDENTIALS_DIR` (see `.env-example`).
+  `GOOGLE_OAUTH_CREDENTIAL_DIR` (see `.env-example`).
 - `.gitignore` blocks `.env`, `credentials.json`, `token.json`, `client_secret*.json`.
 - `integration_lab/security_scan.py` (implemented, Batch 1) asserts none of these are
   present/tracked, scans for API-key-like patterns, hardcoded Windows paths, reference-
@@ -83,3 +83,39 @@ audit implementation is a later batch. This document will be updated again then.
   precondition for any real declaration exchange) verified by
   `integration_lab/scripts/compare_declaration_schemas.py`; see
   `integration_lab/evidence/session_recovery_step_c/task2_declaration_schema/`.
+
+## Batch 4A additions
+
+- **Gmail credential isolation** (`infrastructure/gmail_credentials.py`):
+  `credentials.json`/`token.json` resolved only via
+  `GOOGLE_OAUTH_CREDENTIAL_DIR` (env var, never a config field); scope
+  enforcement (`gmail.send` only, rejects `.modify`/`.compose`/`.readonly`/
+  full-mailbox) happens in code before any network call; error messages
+  never echo file content. 12 tests
+  (`tests/security/test_gmail_credentials.py`), including a real check
+  that no `credentials.json`/`token.json`/`client_secret*` file is ever
+  tracked by git.
+- **Gmail Gatekeeper** (`infrastructure/gmail_gatekeeper.py`): bounded
+  retries (never an infinite loop), a per-attempt timeout, a queue-depth
+  cap, and idempotency-key-based duplicate-send suppression — 10 tests,
+  always against a mocked send function.
+- **Report-refusal on unverified evidence**: the Gmail reporter runs the
+  real, unmodified replay verifier on target artifacts before building
+  any report and refuses (does not silently proceed) if they are not
+  `VERIFIED` — `sdk/report_runner.py`, tested
+  (`tests/unit/test_report_runner.py`).
+- **Public-network bearer-token auth** (`infrastructure/public_auth.py`):
+  env-var-only (`PUBLIC_BIND_TOKEN`) token source, constant-time
+  comparison (`hmac.compare_digest`), never logged. 7 tests
+  (`tests/security/test_public_auth.py`). The server's existing
+  localhost-only bind guard (`infrastructure/server_lifecycle.py`) is
+  unchanged — this module is prepared but not wired into the live server.
+- **Live GUI opponent-position-leak scanner**
+  (`tests/unit/test_gui_no_opponent_leak.py`): reflection-based, fails
+  the build if any GUI-reachable dataclass grows a field shaped like
+  `opponent_true_position`.
+- **Replay-viewer cross-schema finding**: this repo's own replay verifier
+  cannot correctly recompute the opponent's differently-shaped commitment
+  hashes — see `docs/LIMITATIONS.md`'s Batch 4A section for the full
+  explanation and fix (never claim a verdict this repo cannot actually
+  compute).

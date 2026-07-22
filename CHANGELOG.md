@@ -5,6 +5,57 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added — Implementation Batch 4A (live GUI, replay viewer, Gmail
+### dry-run reporting, public-network preparation)
+
+- **Live GUI** (`gui/`, `services/gui_events.py`, `services/gui_sink.py`,
+  `services/turn_gui_publish.py`, `services/turn_decide.py`): the real
+  turn loop now optionally publishes typed, own-truth-only events through
+  an off-by-default sink into a thread-safe queue; a pure Tkinter-free
+  view model (`gui/view_model.py`) folds them into display state (22
+  headless tests, including a reflection-based opponent-position-leak
+  scanner). `services/turn_loop.py` gained ~15 lines of publish calls;
+  split `turn_decide.py`/`turn_gui_publish.py` out to stay under the
+  150-line cap. New `peer --gui`/`--no-gui` CLI command
+  (`sdk/gui_runner.py`, `gui/tk_app.py`/`tk_board.py`/`tk_panels.py`,
+  `gui/background_runner.py`). Real two-process runs (smoke + full
+  six-sub-game series, `--gui`) completed and replay-verified.
+- **Graphical replay viewer** (`gui/replay_view_model.py`,
+  `gui/replay_steps.py`, `gui/replay_playback.py`,
+  `gui/tk_replay_app.py`/`tk_replay_board.py`/`tk_replay_panels.py`, new
+  `replay` CLI command): reuses `services/replay_verifier.py` unmodified.
+  **Real defect found and fixed while building this**: this repo's own
+  verifier cannot correctly recompute the opponent's differently-shaped
+  (`sealed-turn/2` vs `commit-reveal/2`) commitment hashes, and would
+  otherwise report a false TAMPERED on genuinely valid opponent data — the
+  opponent's side is now loaded for display only, honestly labeled
+  `NOT_INDEPENDENTLY_VERIFIED_FROM_THIS_SIDE`, never a fabricated verdict.
+  15 headless tests.
+- **Gmail dry-run reporter** (`domain/gmail_report_schema.py`,
+  `infrastructure/gmail_credentials.py`, `infrastructure/gmail_gatekeeper.py`,
+  `infrastructure/gmail_sender.py`, `sdk/report_runner.py`, new `report`
+  CLI command): structured-JSON report built from real artifacts;
+  `gmail.send`-only scope enforced in code; real token-bucket
+  Gatekeeper (rate limit, concurrency, bounded retries/backoff, queue
+  depth, idempotency); refuses to build a report from artifacts that fail
+  the real replay verifier. `--send` exists but was never invoked this
+  batch (43 tests across gatekeeper/credentials/sender/schema/refusal).
+  New optional `gmail-send` dependency group (google-auth/-oauthlib/
+  api-python-client), never installed by default `uv sync`.
+- **Public-network preparation, never activated**
+  (`infrastructure/public_auth.py`, `docs/PUBLIC_NETWORK_SETUP.md`,
+  updated `docs/LEAGUE_RUNBOOK.md`): bearer-token resolution/constant-time
+  verification, tested (7 tests). The existing localhost-only bind guard
+  in `infrastructure/server_lifecycle.py` is unchanged.
+- **Reliability regression** (before any GUI work began, per explicit
+  gating instruction): three consecutive real six-sub-game HTTP series
+  plus one bounded injected-delay scenario (new diagnostic-only
+  `DelayedPoliceBrain` test fixture) all passed cleanly.
+- Workspace scripts (`integration_lab/scripts/`): `check_public_endpoint.py`,
+  `check_peer_auth.py`, `check_port_release.py`, `package_match_evidence.py`
+  — all preparation/verification only, no network calls, no packaging of
+  unverified evidence.
+
 ### Added — Implementation Batch 3.6 (epistemic fairness, scent timing,
 ### capture correctness, and strategy distinguishability audit)
 

@@ -14,7 +14,7 @@ wins until reconciled.
 | `strategy/` | `BaselinePoliceBrain`, `BeliefCutoffPoliceBrain`, shared `BrainBase`/`Decision` contract | Not started — design only, see `integration_lab/audit/strategy_proposals.md` |
 | `infrastructure/` | FastMCP server/client, Gmail sender, rate limiter/Gatekeeper, transport-level concerns | `mcp_server.py`/`mcp_client.py` implemented (health/negotiate/config-hash-compare only); Gmail sender not started |
 | `services/` | Cross-cutting orchestration (e.g. the peer runtime/state machine, deadline tracker, watchdog) built on top of `domain` + `protocol` + `infrastructure` | Not started |
-| `gui/` | Live view + replay viewer; never displays the opponent's true position | Not started |
+| `gui/` | Live view + replay viewer; never displays the opponent's true position | **Implemented (Batch 4A)**: `view_model.py`/`event_queue.py`/`background_runner.py` (pure/headless), `tk_app.py`/`tk_board.py`/`tk_panels.py` (live Tkinter rendering), `replay_view_model.py`/`replay_steps.py`/`replay_playback.py` (pure/headless), `tk_replay_app.py`/`tk_replay_board.py`/`tk_replay_panels.py` (replay Tkinter rendering) |
 | `shared/` | Config loading/validation, logging setup, version info — no game logic | Implemented: `errors`, `config_sections`, `config_validation`, `config_models`, `private_config`, `rate_limits_model`, `config_loader`, `canonical_json` |
 
 ## Independence guarantees

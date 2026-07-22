@@ -77,3 +77,12 @@ table's numbering above predates Batch 2 and does not line up 1:1 with the
 Batch-2 phase numbers used in `integration_lab/audit/PROGRESS.md` and the
 CHANGELOG — treat the table above as historical (Batch 1) and the CHANGELOG
 + PROGRESS.md as the current source of truth for Batch 2 status.
+
+## Implementation Batch 4A (this session)
+
+GUI (Phase 10 in the table above), replay viewer, and Gmail reporting
+(Phase 12) are now **DONE** (dry-run only for Gmail — real send gated
+behind Manual Gate C, never invoked). Public network/league play (Phase
+15) remains preparation-only (Manual Gates A/B). See `CHANGELOG.md` and
+`integration_lab/audit/PROGRESS.md` for full detail — this file's table
+is not being retrofitted with a new numbering scheme for Batch 4A.

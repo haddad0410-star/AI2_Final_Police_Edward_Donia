@@ -16,6 +16,43 @@ Current, honest state as of this scaffold (Phase 1-2, no application code writte
 This file will be kept current every phase — never allowed to go stale while claiming
 a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
 
+## Current state (Implementation Batch 4A)
+
+- **Live GUI, replay viewer, Gmail dry-run reporting, and public-network
+  preparation are now implemented and tested** — league play, real Gmail
+  send, and public network exposure are still not done (see below).
+- The graphical replay viewer surfaced a genuine, previously-unknown
+  cross-schema incompatibility: this repo's own replay-verification
+  engine cannot correctly recompute the opponent's differently-shaped
+  commitment hashes (`sealed-turn/2` vs this repo's `commit-reveal/2`).
+  Fixed by never claiming a verdict this repo's crypto module cannot
+  actually compute — the opponent's side is loaded for display only,
+  honestly labeled `NOT_INDEPENDENTLY_VERIFIED_FROM_THIS_SIDE`. Each
+  side's replay viewer can only ever fully verify its own artifacts; a
+  true mutual cross-verification would need to run both repos' own
+  verifiers together (as `integration_lab/scripts/mutual_comparison.py`
+  and the new `package_match_evidence.py` already do at the workspace
+  level).
+- The live GUI's "runtime latency" and "decision latency" figures are
+  real measured values from this process, not simulated; the live GUI's
+  "connection status" is derived from protocol-level exchange success/
+  failure (reveal received or not), not a raw socket-level connection
+  event — this repo does not currently instrument socket-level connect/
+  disconnect events separately.
+- Gmail `--send` mode exists in real, tested code (routed through a real
+  Gatekeeper) but has never been invoked; it requires the
+  `gmail-send` optional dependency group to be installed explicitly
+  (`uv sync --extra gmail-send`) and real OAuth credentials outside this
+  repo, neither of which exist in this environment.
+- Public-network preparation (`infrastructure/public_auth.py`) is
+  real, tested code, but the server's existing hard localhost-only bind
+  guard is deliberately unchanged — going public would require a
+  separate, reviewed code change plus your explicit approval, not just
+  an environment variable.
+- Readiness: `LOCAL_READY` (unchanged — Batch 4A adds local
+  tooling/UI/reporting on top of an already-`LOCAL_READY` baseline;
+  `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY` still not claimed).
+
 ## Current state (Implementation Batch 3.6)
 
 - A dedicated epistemic-fairness, scent-timing, capture-correctness, and
