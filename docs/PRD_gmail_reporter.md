@@ -8,7 +8,7 @@ Define the automated Gmail reporting tool.
 
 - Scope `gmail.send` only (Appendix A, visually confirmed p.107-108).
 - Recipient `rmisegal+uoh26finalgame@gmail.com` (Appendix F Table 20, visually confirmed).
-- Credentials outside the repo via `GMAIL_CREDENTIALS_DIR`.
+- Credentials outside the repo via `GOOGLE_OAUTH_CREDENTIAL_DIR`.
 - Modes: dry-run (default), draft, send (`--send`, requires your explicit approval each time — Manual Gate C).
 - Report body is structured JSON, attached, not free text (Ch.9.3.3).
 

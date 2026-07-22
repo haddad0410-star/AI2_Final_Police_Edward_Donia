@@ -12,6 +12,17 @@ dependencies = [
     "fastmcp>=3.4.3",
 ]
 
+[project.optional-dependencies]
+# Only needed for real Gmail --send mode (Manual Gate C, never exercised by
+# default `uv sync` or by the test suite, which always injects a mocked
+# Gmail client). Install explicitly with `uv sync --extra gmail-send`
+# before ever using `peer report --send`.
+gmail-send = [
+    "google-auth>=2.29",
+    "google-auth-oauthlib>=1.2",
+    "google-api-python-client>=2.130",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

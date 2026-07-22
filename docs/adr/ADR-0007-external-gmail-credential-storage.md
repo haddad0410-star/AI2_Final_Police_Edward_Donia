@@ -10,7 +10,7 @@ Rule 12 forbids ever committing `credentials.json`/`token.json`, and the book's 
 
 ## Decision
 
-Both files must live in a directory entirely outside both repositories, referenced only via an environment variable (`GMAIL_CREDENTIALS_DIR`). `.gitignore` still blocks them as a second layer, not the only layer.
+Both files must live in a directory entirely outside both repositories, referenced only via an environment variable (`GOOGLE_OAUTH_CREDENTIAL_DIR`). `.gitignore` still blocks them as a second layer, not the only layer.
 
 ## Consequences
 
