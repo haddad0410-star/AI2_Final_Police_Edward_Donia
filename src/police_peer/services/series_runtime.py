@@ -23,7 +23,11 @@ from police_peer.services.series_scoring import (
     aggregate,
     resolve_final_agreement,
 )
-from police_peer.services.subgame_runtime import advance_to_signed, build_context
+from police_peer.services.subgame_runtime import (
+    advance_to_signed,
+    await_opponent_ready,
+    build_context,
+)
 from police_peer.services.transport import OpponentTransport
 from police_peer.services.turn_loop import run_sub_game
 from police_peer.shared.config_models import SharedGameConfig
@@ -54,12 +58,14 @@ async def run_series(
     their_totals: tuple[int, int] | None = None,
     machine: PeerStateMachine | None = None,
     rng: random.Random | None = None,
+    opponent_url: str | None = None,
 ) -> SeriesResult:
     """Run a full series and return its aggregated, mutually-audited result."""
     games = num_games if num_games is not None else shared.network_and_league.num_games
     machine = machine if machine is not None else PeerStateMachine()
     rng = rng if rng is not None else random.Random(private.play.seed)
     advance_to_signed(machine)
+    await await_opponent_ready(opponent_url)
     records: list[SubGameRecord] = []
     sealed_by_game: list[tuple] = []
     reason = "completed"

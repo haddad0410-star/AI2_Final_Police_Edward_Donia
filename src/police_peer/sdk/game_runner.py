@@ -68,7 +68,13 @@ async def run_subgame_headless(
     )
     try:
         result = await run_single_subgame(
-            shared, private, transport, game_uid=game_uid, config_sha256=config_sha, machine=machine
+            shared,
+            private,
+            transport,
+            game_uid=game_uid,
+            config_sha256=config_sha,
+            machine=machine,
+            opponent_url=opponent_url,
         )
     finally:
         await server.stop()
@@ -127,6 +133,7 @@ async def run_series_headless(
             config_sha256=config_sha,
             num_games=num_games,
             machine=machine,
+            opponent_url=opponent_url,
         )
     finally:
         await server.stop()

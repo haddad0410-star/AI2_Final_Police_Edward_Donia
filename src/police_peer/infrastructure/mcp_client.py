@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import asyncio
 
+import httpx
 from fastmcp import Client
 from fastmcp.exceptions import ClientError
+from mcp.shared.exceptions import McpError
 
 #: FastMCP wraps unreachable-peer failures (connection refused, DNS, etc.) in
 #: a plain RuntimeError as well as the more specific types below -- all mean
@@ -22,11 +24,27 @@ class PeerUnavailableError(Exception):
     """Raised when the opponent cannot be reached within the given timeout."""
 
 
+def _is_connection_timeout(exc: McpError) -> bool:
+    """True only for a client-side timeout waiting on ANY response (session
+    read timeout or a raw ``httpx.ConnectTimeout``) -- the only two sites in
+    the installed mcp/fastmcp packages that raise ``McpError`` with this
+    exact code (verified against site-packages: ``mcp/shared/session.py``
+    and ``fastmcp/utilities/exceptions.py``). Every other ``McpError`` either
+    uses a different explicit code or forwards the OPPONENT's own real
+    JSON-RPC error code -- a genuine remote/application fault, never
+    reclassified as connectivity here."""
+    return exc.error.code == httpx.codes.REQUEST_TIMEOUT
+
+
 async def _call(url: str, tool: str, arguments: dict, timeout_seconds: float) -> dict:
     try:
         async with Client(url, timeout=timeout_seconds) as client:
             result = await client.call_tool(tool, arguments)
     except _CONNECTION_FAILURES as exc:
+        raise PeerUnavailableError(f"peer at {url} did not respond: {exc}") from exc
+    except McpError as exc:
+        if not _is_connection_timeout(exc):
+            raise
         raise PeerUnavailableError(f"peer at {url} did not respond: {exc}") from exc
     return result.data
 

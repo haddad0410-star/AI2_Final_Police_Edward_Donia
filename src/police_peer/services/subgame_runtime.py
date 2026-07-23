@@ -7,6 +7,7 @@ opponent transport is injected (HTTP in production, a fake in tests).
 
 from __future__ import annotations
 
+import contextlib
 import random
 
 from police_peer.domain.belief_updates import uniform_prior
@@ -15,6 +16,7 @@ from police_peer.domain.positions import Position
 from police_peer.domain.roles import Role
 from police_peer.domain.scent import empty_scent_field
 from police_peer.domain.state_machine import EventKind, PeerStateMachine, TransitionEvent
+from police_peer.infrastructure.mcp_client import PeerUnavailableError, wait_for_health
 from police_peer.services.outcomes import SubGameRunResult
 from police_peer.services.subgame_state import RuntimeState
 from police_peer.services.transport import OpponentTransport
@@ -52,6 +54,17 @@ def advance_to_signed(machine: PeerStateMachine) -> None:
         machine.require(TransitionEvent.of(kind))
 
 
+async def await_opponent_ready(opponent_url: str | None) -> None:
+    """Bounded wait for the opponent's health, called only AFTER our own
+    machine has already left INITIALIZING (above), so we stay receptive to
+    their first message the whole time we wait for them; a genuine no-show
+    still fails honestly at the first real ``exchange_turn`` call, unchanged."""
+    if opponent_url is None:
+        return
+    with contextlib.suppress(PeerUnavailableError):
+        await wait_for_health(opponent_url, attempts=100, delay_seconds=0.3)
+
+
 async def run_single_subgame(
     shared: SharedGameConfig,
     private: PrivateGameConfig,
@@ -62,10 +75,12 @@ async def run_single_subgame(
     sub_game_number: int = 1,
     machine: PeerStateMachine | None = None,
     rng: random.Random | None = None,
+    opponent_url: str | None = None,
 ) -> SubGameRunResult:
     """Run one sub-game against the injected opponent transport; return its outcome."""
     machine = machine if machine is not None else PeerStateMachine()
     advance_to_signed(machine)
+    await await_opponent_ready(opponent_url)
     machine.require(TransitionEvent.of(E.START_SUB_GAME))
     context = build_context(
         shared,
