@@ -1,0 +1,54 @@
+# POLICE peer configuration -- PRIVATE, LOCAL setup only for this peer.
+# Anything the two sides must AGREE on (board, movement, scoring, pheromones,
+# network/league minimums, rate limits) lives in the signed, shared game.json in this
+# same directory -- never here. This file must contain nothing relevant to the
+# opponent beyond the one URL needed to reach them.
+#
+# ADVANCED-STRATEGY DEMO PROFILE: identical to config/police except [strategy]
+# below points at BeliefCutoffPoliceBrain (the from-scratch baseline in
+# config/police never places a barrier -- see strategy/baseline_police_brain.py
+# -- so it cannot produce a barrier-placement screenshot). Same police_class +
+# profile + seed combination already verified to place barriers in
+# integration_lab/evidence/batch4b/bilateral_series/police_config/game.toml
+# (barrier_count=8 in all 6 sub-games, both_terminated_explicitly=true,
+# no technical loss). Ports match the standard GUI README (8901/8902).
+
+version = "0.1.0"
+
+[game]
+group_name = "Edward-Donia"
+group_id = "edward-donia"          # PROVISIONAL -- verify against the course's binding group-ID rule
+sub_game_number = 1
+members = ["Edward Haddad 214083115", "Donia Naser 212810493"]
+repos = { police = "https://github.com/haddad0410-star/AI2_Final_Police_Edward_Donia", thief = "https://github.com/haddad0410-star/AI2_Final_Thief_Edward_Donia" }
+
+[network]
+my_port = 8901                                    # MY MCP server port (private choice)
+opponent_url = "http://127.0.0.1:8902/mcp"        # the ONLY thing I know about the opponent locally; replaced with a real remote URL only after Manual Gate A/B
+turn_timeout_seconds = 180
+
+# [strategy] -- point at YOUR own brain class (package.module:ClassName). Private,
+# never negotiated.
+[strategy]
+police_class = "police_peer.strategy.belief_cutoff_police_brain:BeliefCutoffPoliceBrain"
+profile = "advanced"
+
+# [trash_talk] -- HOW the banter/hint is produced. The MOVE is always pure Python.
+[trash_talk]
+provider = "template"        # 0 tokens, no network, no paid API -- DEFAULT, do not change without explicit opt-in
+# model / every_n_steps are only relevant if a paid provider is opted into later
+
+[gui]
+cell_px = 52
+
+[paths]
+logs_dir = "logs"
+log_filename = "{role}_match.json"
+
+[play]
+seed = 1234                  # MY private RNG seed (local move/banter randomness); never shared
+
+[email]
+recipient = "rmisegal+uoh26finalgame@gmail.com"
+mode = "disabled"            # disabled by default -- no Gmail call of any kind until Manual Gate C is cleared
+credentials_dir_env_var = "GMAIL_CREDENTIALS_DIR"   # points OUTSIDE this repo; see .env-example

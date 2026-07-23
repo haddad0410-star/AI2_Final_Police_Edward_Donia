@@ -176,3 +176,19 @@ audit implementation is a later batch. This document will be updated again then.
   `services/bilateral_verify.py`, not merely this side's own
   `verify_replay`. Real evidence, both accept and refuse paths:
   `integration_lab/evidence/batch4b/gmail_bilateral_gate/`.
+
+## Post-Batch-4B additions — narrow `McpError` connectivity classification
+
+- **`infrastructure/mcp_client.py`**: a client-side session-initialize
+  timeout (raised by the installed `mcp`/`fastmcp` packages as `McpError`)
+  is now reclassified as `PeerUnavailableError` — but ONLY when
+  `error.code == httpx.codes.REQUEST_TIMEOUT`, the exact code used by the
+  only 2 client-side-timeout raise sites in the installed packages
+  (verified directly against `mcp/shared/session.py` and
+  `fastmcp/utilities/exceptions.py` before writing the fix). Every other
+  `McpError` — a genuine remote/application error, including the
+  opponent's own real JSON-RPC error forwarded verbatim — still
+  propagates unchanged; this is deliberately NOT a blanket
+  `except McpError`/`except Exception`. `tests/unit/test_mcp_client.py`
+  proves both the narrow reclassification and that non-timeout errors are
+  never swallowed.

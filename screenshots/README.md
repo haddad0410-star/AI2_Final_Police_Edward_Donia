@@ -57,10 +57,33 @@ early on one side ends the other side's sub-game as a technical loss).
    = top-5 most likely).
 3. **Barrier placement** — once `BeliefCutoffPoliceBrain` places a barrier
    (visible as a dark cell on the board canvas and in the event log panel
-   on the right), capture that moment.
+   on the right), capture that moment. **Requires the advanced-strategy
+   config, not the Prerequisites command above**: the default
+   `config/police` profile loads `BaselinePoliceBrain`, which by design
+   never places a barrier (`strategy/baseline_police_brain.py`) — this
+   capture is unreachable with the Prerequisites command. Use instead:
+   ```bash
+   cd police_peer
+   uv run python -m police_peer peer --gui --config-dir config/police_advanced \
+     --opponent-url http://127.0.0.1:8902/mcp
+   ```
+   (paired with the Thief side's `config/thief_advanced`, same ports —
+   see `thief_peer/screenshots/README.md`). This profile is identical to
+   `config/police` except `[strategy].police_class` points at
+   `BeliefCutoffPoliceBrain`; same class/profile/seed combination already
+   verified to place barriers (`barrier_count=8` in all 6 sub-games, no
+   technical loss, both sides' bilateral replay `VERIFIED`) in
+   `integration_lab/evidence/batch4b/bilateral_series/police_config/game.toml`
+   and reproduced headlessly for this correction.
 4. **Protocol status** — the status panel's `last_message_type`,
    `commit_sent`/`ack_received`/`reveal_sent`/`reveal_received` fields
-   updating turn to turn (visible if you resize/inspect during play).
+   (Batch 4B: now real per-substep values read live from the actual
+   commit/ack/reveal exchange, never hardcoded — see
+   `services/turn_gui_publish.py` and `infrastructure/http_transport.py`).
+   In practice each turn only lasts ~100ms, too fast to screenshot mid-turn
+   reliably — the easiest reliable capture is right after the game ends:
+   the LAST completed turn's values stay frozen on screen for the full ~8s
+   auto-close window (nothing resets them at game end), so capture then.
 5. **Capture/result banner** — the red banner turning into
    "SUB-GAME OVER: CAPTURE" (or SURVIVAL/TECHNICAL LOSS) at game end. The
    live window auto-closes ~8s after the game finishes

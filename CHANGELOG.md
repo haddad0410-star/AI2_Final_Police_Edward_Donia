@@ -5,6 +5,60 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed — Post-Batch-4B manual screenshot finalization
+
+- **Peer-startup readiness race**: `peer --gui`/`run-series`/`run-subgame`
+  sent the first real commit before the opponent's server/state machine
+  was necessarily ready, causing a spurious `TECHNICAL_LOSS` on ordinary
+  two-terminal human timing. Fixed with a bounded opponent-health wait
+  (`services/subgame_runtime.py::await_opponent_ready`, reusing the
+  existing `wait_for_health`) placed correctly — right after this peer's
+  own machine leaves `INITIALIZING` (so it stays receptive to the
+  opponent's first message the entire time it waits), never gated behind
+  it. A genuine no-show still fails honestly at the first real exchange
+  call, unchanged.
+- **GUI protocol-status panel showed nothing real**: `commit_sent`/
+  `ack_received`/`reveal_sent`/`reveal_received` existed in the view model
+  but `gui/tk_panels.py`'s `StatusPanel` never rendered them, and
+  `services/turn_gui_publish.py` had hardcoded `commit_sent=True` and
+  collapsed the other three onto one pass/fail flag. Fixed:
+  `infrastructure/http_transport.py::exchange_turn` now tracks the REAL
+  per-substep progress of each commit/reveal exchange (extended
+  `services/transport.py::TechnicalFailure` with `commit_sent`/
+  `commit_acked`/`reveal_sent`), `turn_gui_publish.py` reads them instead
+  of hardcoding, and `tk_panels.py` renders all four. New
+  `tests/unit/test_turn_gui_publish.py` and additions to
+  `tests/unit/test_http_transport.py` prove the values differ correctly
+  across 4 distinct real failure modes.
+- **`McpError` (client-side session-initialize timeout) crashed instead of
+  retrying**: the readiness fix above calls `wait_for_health` far more
+  often than before (previously only `negotiate-smoke`), which newly
+  exposed a pre-existing gap in `infrastructure/mcp_client.py` — a
+  connection/session-initialization timeout
+  (`"Timed out while waiting for response to InitializeRequest"`) is
+  raised by the installed `mcp`/`fastmcp` packages as `McpError`, which
+  wasn't in `_CONNECTION_FAILURES` and so propagated uncaught instead of
+  becoming `PeerUnavailableError`. Fixed narrowly: only an `McpError` whose
+  `error.code == httpx.codes.REQUEST_TIMEOUT` (the exact, verified code
+  used by the only two client-side-timeout raise sites in the installed
+  packages) is reclassified as `PeerUnavailableError`; any other `McpError`
+  (a genuine remote/application error) still propagates unchanged. New
+  `tests/unit/test_mcp_client.py` (6 tests, fully monkeypatched/
+  deterministic). The regression this fixes: a real integration test that
+  used to take 30.17s (retry-then-crash) now takes 0.2-0.5s.
+- New non-destructive `config/police_advanced` profile (identical to
+  `config/police` except `[strategy].police_class` points at
+  `BeliefCutoffPoliceBrain`) so the barrier-placement screenshot is
+  actually reachable — the default profile's `BaselinePoliceBrain` never
+  places a barrier by design. The default `config/police` profile itself
+  was never modified.
+- 18 real, human-captured screenshots (9 per repo) added under
+  `screenshots/`; both `screenshots/README.md` files corrected where they
+  previously pointed at commands that couldn't produce the described
+  capture. Full index: `integration_lab/evidence/batch4b/MANUAL_HANDOFF.md`.
+- 458 tests, 94.15% coverage, 0 Ruff violations, all files <=150 meaningful
+  lines.
+
 ### Added — Implementation Batch 4B (bilateral commitment verification)
 
 - **Unified `commitment/1` sealed-record schema** (`domain/crypto/payload.py`):
