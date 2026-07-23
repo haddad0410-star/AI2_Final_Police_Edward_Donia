@@ -32,9 +32,17 @@ class OpponentReveal:
 
 @dataclass(frozen=True, slots=True)
 class TechnicalFailure:
-    """Returned by a transport when the opponent is unreachable or malformed."""
+    """Returned by a transport when the opponent is unreachable or malformed.
+
+    ``commit_sent``/``commit_acked``/``reveal_sent`` are the real per-substep
+    progress this peer actually made before the failure -- for the GUI
+    protocol-status panel (never inferred from ``machine.state``, never
+    hardcoded)."""
 
     reason: str
+    commit_sent: bool = False
+    commit_acked: bool = False
+    reveal_sent: bool = False
 
 
 @runtime_checkable

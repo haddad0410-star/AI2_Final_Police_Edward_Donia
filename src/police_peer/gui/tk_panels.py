@@ -49,6 +49,10 @@ class StatusPanel(tk.Frame):
             "decision_latency_seconds",
             "belief_entropy_bits",
             "last_message_type",
+            "commit_sent",
+            "ack_received",
+            "reveal_sent",
+            "reveal_received",
         ):
             self.vars[key] = tk.StringVar(value="-")
             row = tk.Frame(self)
@@ -70,6 +74,10 @@ class StatusPanel(tk.Frame):
             f"{model.belief.entropy_bits:.3f}" if model.belief else "-"
         )
         self.vars["last_message_type"].set(model.last_message_type)
+        self.vars["commit_sent"].set(str(model.commit_sent))
+        self.vars["ack_received"].set(str(model.ack_received))
+        self.vars["reveal_sent"].set(str(model.reveal_sent))
+        self.vars["reveal_received"].set(str(model.reveal_received))
 
 
 class EventPanel(tk.Frame):

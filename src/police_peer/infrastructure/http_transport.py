@@ -47,26 +47,49 @@ class HttpOpponentTransport:
         game_uid, ...) is a real protocol fault, not silently ignored: it
         becomes an explicit ``TechnicalFailure`` immediately rather than
         polling forever for a reveal the opponent never actually accepted
-        our commitment/reveal well enough to answer.
+        our commitment/reveal well enough to answer. Every ``TechnicalFailure``
+        below carries the REAL per-substep progress made before it, for the
+        GUI protocol-status panel -- ``*_sent`` only turns True once a
+        response (accepted or rejected) actually came back; a pure
+        connection failure means we never confirmed anything left our side.
         """
+        commit_sent = commit_acked = reveal_sent = False
         try:
             commit_ack = await call_receive_turn(self._url, commitment)
-            if not commit_ack.get("ok"):
-                return TechnicalFailure(f"opponent rejected our commitment: {commit_ack}")
-            reveal_ack = await call_receive_turn(self._url, reveal)
-            if not reveal_ack.get("ok"):
-                return TechnicalFailure(f"opponent rejected our reveal: {reveal_ack}")
         except PeerUnavailableError as exc:
             return TechnicalFailure(f"opponent unreachable: {exc}")
-        return await self._await_opponent_reveal()
+        commit_sent = True
+        if not commit_ack.get("ok"):
+            return TechnicalFailure(f"opponent rejected our commitment: {commit_ack}", commit_sent)
+        commit_acked = True
+        try:
+            reveal_ack = await call_receive_turn(self._url, reveal)
+        except PeerUnavailableError as exc:
+            return TechnicalFailure(f"opponent unreachable: {exc}", commit_sent, commit_acked)
+        reveal_sent = True
+        if not reveal_ack.get("ok"):
+            return TechnicalFailure(
+                f"opponent rejected our reveal: {reveal_ack}",
+                commit_sent,
+                commit_acked,
+                reveal_sent,
+            )
+        return await self._await_opponent_reveal(commit_sent, commit_acked, reveal_sent)
 
-    async def _await_opponent_reveal(self) -> OpponentReveal | TechnicalFailure:
+    async def _await_opponent_reveal(
+        self, commit_sent: bool, commit_acked: bool, reveal_sent: bool
+    ) -> OpponentReveal | TechnicalFailure:
         for _ in range(self._max_polls):
             message = self._pop_reveal()
             if message is not None:
                 return self._to_reveal(message)
             await asyncio.sleep(self._poll_interval)
-        return TechnicalFailure("no opponent reveal received within poll budget")
+        return TechnicalFailure(
+            "no opponent reveal received within poll budget",
+            commit_sent,
+            commit_acked,
+            reveal_sent,
+        )
 
     def _pop_reveal(self) -> dict | None:
         for index, message in enumerate(self._inbox.turn_messages):

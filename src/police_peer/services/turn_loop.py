@@ -111,7 +111,7 @@ async def run_sub_game(ctx: SubGameContext) -> SubGameRunResult:
             opponent = await ctx.transport.exchange_turn(commit_msg, reveal_msg)
             if isinstance(opponent, TechnicalFailure):
                 machine.fail(opponent.reason)
-                gui.exchange_failed(state, ctx.config_sha256, machine.state.value)
+                gui.exchange_failed(state, ctx.config_sha256, machine.state.value, opponent)
                 gui.result_for(
                     state, "technical_loss", opponent.reason, records, machine.state.value
                 )
