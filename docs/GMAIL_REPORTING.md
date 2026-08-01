@@ -9,8 +9,8 @@ Claude; no real Gmail API call has ever been made.
 - **Scope: `gmail.send` only.** Confirmed by Appendix A's explicit "Least Privilege"
   callout (printed p.107) and cross-checked against the general Google API guide's
   broader `gmail.modify`+`calendar` demo scopes, which are **not** used here — see
-  `integration_lab/audit/risk_register.md` risk #11 and
-  `integration_lab/audit/manual_gates.md` Gate G. Enforced in code, not just
+  `_post4b_supplementary_evidence/audit/risk_register.md` risk #11 and
+  `_post4b_supplementary_evidence/audit/manual_gates.md` Gate G. Enforced in code, not just
   documented: `infrastructure/gmail_credentials.py::assert_scope_is_send_only`
   rejects `gmail.modify`/`.compose`/`.readonly`/`https://mail.google.com/`
   before any network call is made (tested,
@@ -63,7 +63,7 @@ artifacts FIRST and raises `ReportRefusedError` (CLI exit code 3) if they
 are not `VERIFIED` — a report is never built, let alone sent, from
 tampered or incomplete evidence. Tested:
 `tests/unit/test_report_runner.py`; real demonstration:
-`integration_lab/evidence/batch4a/gmail_dry_run/invalid_report_rejection.json`.
+`_post4b_supplementary_evidence/batch4a_gmail_dry_run/invalid_report_rejection.json`.
 
 ### Batch 4B: bilateral verification gate
 
@@ -75,7 +75,7 @@ both `VERIFIED`, not just this side's own artifacts. Without
 `--opponent-artifacts-dir`, the single-sided gate above still applies
 (strictly more conservative, never less). Real evidence (accept and
 refuse paths, real bilateral series from Task 7):
-`integration_lab/evidence/batch4b/gmail_bilateral_gate/`. Tested:
+`_post4b_supplementary_evidence/batch4b/gmail_bilateral_gate/`. Tested:
 `tests/unit/test_report_runner.py::test_bilateral_gate_*`.
 
 ## Rate limiting (Gatekeeper)
@@ -86,11 +86,11 @@ minimums): token-bucket requests-per-minute limit, concurrency semaphore,
 bounded retries with backoff on HTTP 429, a queue-depth limit, a
 per-attempt timeout, and idempotency-key-based duplicate-report
 suppression. 10 tests, always against a mocked send function — never a
-real Gmail API call. Evidence: `integration_lab/evidence/batch4a/gmail_dry_run/rate_limit_test.txt`.
+real Gmail API call. Evidence: `_post4b_supplementary_evidence/batch4a_gmail_dry_run/rate_limit_test.txt`.
 
 ## Dry-run evidence
 
-`integration_lab/evidence/batch4a/gmail_dry_run/`: real report bodies for
+`_post4b_supplementary_evidence/batch4a_gmail_dry_run/`: real report bodies for
 a one-sub-game result, a six-sub-game result, and a technical-loss
 result, plus the invalid-artifact-refusal, schema-validation, rate-limit,
 and security test outputs.

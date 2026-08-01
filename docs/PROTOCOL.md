@@ -1,6 +1,6 @@
 # Protocol — Police Peer (role-local summary)
 
-**Canonical source:** `integration_lab/audit/protocol_contract.md`. This file
+**Canonical source:** `_post4b_supplementary_evidence/audit/protocol_contract.md`. This file
 summarizes only what's specific to running this repo as the Police side.
 
 - This peer's default local port: `8901` (private, set in `config/police/game.toml`, not negotiated).
@@ -19,20 +19,23 @@ summarizes only what's specific to running this repo as the Police side.
   `result_<game_id>.json`. Implemented (Batch 2, Phase 11) and, as of
   session recovery step B, wired into `run-series --artifacts-dir`; verified
   byte-identical in schema to the independently-built Thief repo's
-  artifacts via serialized fixture comparison — see
-  `integration_lab/evidence/session_recovery_step_b/feature_parity.md`.
+  artifacts via serialized fixture comparison (raw evidence produced
+  during development in the full project workspace; not included in this
+  single-repo package).
   The Step-0 declaration schema is now frozen and cross-repo-compatible as
   canonical `declaration/2` (session recovery step C, Task 2 — see
   `docs/schemas/declaration.schema.json`, `protocol_contract.md` §3.4a, and
   `risk_register.md` risk #14, now resolved).
-- Real two-process negotiation evidence: `integration_lab/evidence/negotiation_smoke/`
-  (actual stdout/stderr/exit codes from two independently-launched OS processes).
+- Real two-process negotiation evidence (actual stdout/stderr/exit codes
+  from two independently-launched OS processes) was produced during
+  development in the full project workspace and is not included in this
+  single-repo package.
   A real two-process full game/series has NOT been run yet (explicitly out
   of scope through session recovery step B).
 
 **Note (this section describes Batch-1-era scope; the peer has since grown
 `receive_turn`/`submit_audit` and real multi-process series validation —
-see `integration_lab/audit/PROGRESS.md` for current status.)**
+see `_post4b_supplementary_evidence/audit/PROGRESS.md` for current status.)**
 
 **Scent field-name correction (Batch 3.6 Task 2):** `protocol_contract.md`
 §3.2's `scent_grid` field name is this project's own paraphrase of the
@@ -40,7 +43,8 @@ book's prose description of the sealed record — a full-text search of the
 book PDF found no literal `scent_grid`/`smell_grid` field name anywhere.
 The underlying semantics (full-board cumulative decaying trail, sealed raw
 values not a digest) are still correctly implemented; only the exact
-identifier is ours. See `integration_lab/evidence/batch3_6/scent_timing_contract.md`.
+identifier is ours. (Book-citation audit produced during development in
+the full project workspace; not included in this single-repo package.)
 
 **Sealed-record schema unified as `commitment/1` (Batch 4B):** the sealed
 turn payload's field set is now identical in both repos (17 canonical
@@ -49,7 +53,7 @@ prior per-repo `commit-reveal/2`/`sealed-turn/2` shapes that diverged in
 two mechanical ways (this repo's nested `state` dict vs. the opponent's
 opaque digest string; `config_sha256` placement). This is what makes
 genuine bilateral commitment verification possible — see
-`integration_lab/evidence/batch4b/commitment_schema_audit.md` and
+`_post4b_supplementary_evidence/batch4b/commitment_schema_audit.md` and
 `docs/SECURITY.md`'s Batch 4B section. `protocol_contract.md` should be
 updated to reference `commitment/1` as the current binding sealed-record
 schema once both groups' contract is renegotiated with a real opponent;

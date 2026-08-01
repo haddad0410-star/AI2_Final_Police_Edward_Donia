@@ -1,20 +1,27 @@
 # Limitations — Police Peer
 
-Current, honest state as of this scaffold (Phase 1-2, no application code written):
+Current, honest state (implementation complete through Batch 4B; readiness:
+`LOCAL_READY`):
 
-- No FastMCP server/client exists — nothing here has run over real HTTP yet.
-- No game engine, state machine, strategy, scent/belief model, cryptography, GUI,
-  replay, or Gmail sender is implemented.
+- A full FastMCP server/client peer is implemented and has repeatedly run
+  over real two-process HTTP against the Thief peer.
+- Game engine, state machine, both strategies (baseline and advanced),
+  scent/belief model, commit-reveal cryptography, a live GUI, a graphical
+  replay viewer, and a Gmail dry-run reporter are all implemented and
+  tested — see the batch-by-batch history below for what was verified at
+  each step.
 - `pheromone_min_center_intensity=0.5` (seen in the reference repo's config) is not
   confirmed as a binding Appendix F value — tracked as an open item, not assumed.
-  See `integration_lab/audit/risk_register.md` risk #2.
+  See `_post4b_supplementary_evidence/audit/risk_register.md` risk #2.
 - Repository visibility (public vs. private) and its licensing implications are
-  unresolved pending your decision — see `integration_lab/audit/manual_gates.md`
-  Gate E.
-- No league opponent, public network exposure, or Gmail send has occurred.
+  unresolved pending your decision — see
+  `_post4b_supplementary_evidence/audit/manual_gates.md` Gate E.
+- No league opponent, public network exposure, or real Gmail send has
+  occurred — these remain open manual gates (A, B, C), not implementation
+  gaps.
 
-This file will be kept current every phase — never allowed to go stale while claiming
-a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
+This file is kept current every batch — never allowed to go stale while claiming
+a higher readiness level than `_post4b_supplementary_evidence/audit/PROGRESS.md` supports.
 
 ## Current state (Implementation Batch 4A)
 
@@ -63,7 +70,7 @@ a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
   applies to genuinely pre-Batch-4B legacy records (Batch 1-4A evidence,
   preserved unmodified on disk and still self-verifiable under its own
   original schema) — never to a current `commitment/1` record. Full
-  evidence: `integration_lab/evidence/batch4b/` (schema audit, 10
+  evidence: `_post4b_supplementary_evidence/batch4b/` (schema audit, 10
   byte-identical cross-repo test vectors, a 21-category bilateral tamper
   matrix, a real six-sub-game two-process series with
   `FULL_BILATERAL_VERIFICATION=true` both sides, and a bilaterally-gated
@@ -87,7 +94,8 @@ a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
   turns, but that peak matches the true opponent position only **30.5%**
   of the time, and belief entropy barely drops (5.61 -> 5.36 bits) — a
   confident-looking maximum-likelihood signal, not a leak of the true
-  cell. `integration_lab/evidence/batch3_6/epistemic_leakage_audit.md`.
+  cell. (Full simulation write-up produced during development in the full
+  project workspace; not included in this single-repo package.)
 - **No hint-verdict early-visibility defect found**: the intent
   (truth/lie) verdict is confirmed absent from the live `reveal` payload
   and present/verifiable only at final audit, both by direct code
@@ -109,19 +117,21 @@ a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
   files in place before being replaced with a properly-scoped Batch 3.6
   version; content was verified materially identical. One real HTTP
   series showed a transient sub-game failure (system-load-dependent,
-  reproduced 0 times on a clean rerun); both are disclosed in
-  `integration_lab/evidence/batch3_6/limitations.md` and
-  `.../real_http/transient_flake_note.md`.
+  reproduced 0 times on a clean rerun); both are disclosed in evidence
+  produced during development in the full project workspace (not included
+  in this single-repo package).
 - Final classification: **C (genuine game-design ceiling, honestly
   documented) with D (real behavioral differences exist) as a direct
-  corollary** — not A/B/E. See
-  `integration_lab/evidence/batch3_6/conclusion.md`.
-- Full evidence set: `integration_lab/evidence/batch3_6/` (scent-timing
-  contract with book page citations, leakage audit, hint-visibility
-  audit, causal ablation across 9 evidence-source conditions, capture-
-  correctness re-audit, 6 behavioral fixtures, secondary metrics, 800-game
-  robustness results, research/production equivalence, real HTTP series,
-  7 figures).
+  corollary** — not A/B/E. (Full write-up produced during development in
+  the full project workspace; not included in this single-repo package.)
+- Full evidence set (scent-timing contract with book page citations,
+  leakage audit, hint-visibility audit, causal ablation across 9
+  evidence-source conditions, capture-correctness re-audit, 6 behavioral
+  fixtures, secondary metrics, 800-game robustness results,
+  research/production equivalence, real HTTP series) was produced during
+  development in the full project workspace and is not included in this
+  single-repo package. The 7 figures are bundled at
+  `_post4b_supplementary_evidence/batch3_6_figures/`.
 - Readiness: `LOCAL_READY` (unchanged — Batch 3.6 is a fairness/
   correctness audit on top of an already-`LOCAL_READY` baseline;
   `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY` still not claimed).
@@ -137,7 +147,8 @@ a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
   HTTP validation (18 sub-games, 3 series) now show **100% Police capture
   rate in every matchup** — a complete reversal from Batch 3's 0%.
 - This is a **new ceiling tie** (capture, not survival), honestly analyzed
-  in `integration_lab/evidence/batch3_5/strategy_research/acceptance_criteria_evaluation.md`:
+  in a write-up produced during development in the full project workspace
+  (not included in this single-repo package):
   `BeliefCutoffPoliceBrain` shows **no demonstrated capture-rate
   improvement** over `BaselinePoliceBrain` (both 100%, ceiling-tied), but
   does show real, repeatable barrier usage (0 barriers/game for baseline,
@@ -149,9 +160,10 @@ a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
   sensitivities, making the confidence gate mathematically unreachable;
   now split into independent `barrier_confidence_gate`/`barrier_utility_floor`
   fields.
-- Full analysis: `integration_lab/evidence/batch3_5/` (root cause, audit,
-  before/after traces, barrier repair, capture sanity fixtures, held-out
-  and real-HTTP results, figures).
+- Full analysis (root cause, audit, before/after traces, barrier repair,
+  capture sanity fixtures, held-out and real-HTTP results, figures) was
+  produced during development in the full project workspace and is not
+  included in this single-repo package.
 - Readiness: `LOCAL_READY` (unchanged — Batch 3.5 repairs a functional
   defect and re-validates on top of an already-`LOCAL_READY` baseline;
   `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY` still not claimed).
@@ -167,7 +179,8 @@ a higher readiness level than `integration_lab/audit/PROGRESS.md` supports.
   either brain's belief update, so belief never concentrates enough for
   the barrier-confidence gate to open — a pre-existing system
   characteristic, not a defect in this batch's strategy code. Full
-  analysis: `integration_lab/evidence/batch3/strategy_research/limitations.md`.
+  analysis was produced during development in the full project workspace
+  and is not included in this single-repo package.
 - GUI, Gmail reporting, public network exposure, and league play remain
   not implemented/run, unchanged from session recovery step C.
 - `pheromone_min_center_intensity=0.5` remains unconfirmed as binding (risk

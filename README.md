@@ -3,7 +3,7 @@
 **Status: Implementation Batch 4B (bilateral commitment verification).**
 Readiness: `LOCAL_READY`.
 `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY` are **not** claimed — see
-`integration_lab/audit/PROGRESS.md` for the authoritative, up-to-date
+`_post4b_supplementary_evidence/audit/PROGRESS.md` for the authoritative, up-to-date
 readiness record.
 
 ## Abstract
@@ -47,7 +47,8 @@ repository (placeholder, not yet created/pushed):
 `https://github.com/haddad0410-star/AI2_Final_Thief_Edward_Donia`.
 
 Per the project's isolation rules, this repository does **not** import from the
-sibling repository or from `integration_lab/` at runtime. Any resemblance in wire
+sibling repository or from `integration_lab/` (the multi-repo development
+workspace; not part of this single-repo package) at runtime. Any resemblance in wire
 format is by shared protocol contract only (see `docs/PROTOCOL.md`).
 
 ## Project objective and problem formulation
@@ -58,9 +59,11 @@ pursuit game: a tuple `⟨n, S, {Aᵢ}, P, R, {Ωᵢ}, O, γ⟩` in the Dec-POMD
 "no central observer." Each peer observes only: its own true state, the
 opponent's public, decaying scent trail (Ch.4.3, a full-board cumulative trail,
 not a local snapshot), and the opponent's (possibly deceptive) natural-language
-hint — **never** the opponent's true position. See `integration_lab/audit/protocol_contract.md`
-for the full wire-level contract and `integration_lab/evidence/batch3_6/scent_timing_contract.md`
-for the book-citation audit behind this formulation.
+hint — **never** the opponent's true position. See
+`_post4b_supplementary_evidence/audit/protocol_contract.md`
+for the full wire-level contract; the book-citation audit behind this
+formulation was produced during development in the full project workspace
+and is not included in this single-repo package.
 
 ## Architecture
 
@@ -94,7 +97,8 @@ Full detail: `docs/BELIEF_MODEL.md`.
   barrier engineering via BFS reachable-area reduction.
 
 Neither is claimed superior to the other on capture rate (see Results below);
-`docs/STRATEGY.md` has the full design and `integration_lab/audit/strategy_proposals.md`
+`docs/STRATEGY.md` has the full design and
+`_post4b_supplementary_evidence/audit/strategy_proposals.md`
 the pre-registered evaluation methodology (written before any strategy code
 existed, to prevent post-hoc seed selection).
 
@@ -119,13 +123,15 @@ existed, to prevent post-hoc seed selection).
   genuinely different actions from identical inputs. **Final classification: C
   (genuine game-design ceiling) with D (real behavioral differences) as a
   corollary** — not A, B, or E. No win-rate superiority claim is made.
-  `integration_lab/evidence/batch3_6/conclusion.md`.
+  (Full write-up produced during development in the full project workspace;
+  not included in this single-repo package.)
 - **Batch 4A (reliability regression)**: before any GUI work began, three
   consecutive real six-sub-game HTTP series (advanced vs advanced) all
   completed cleanly (no orphan process, no socket leak, both replay verifiers
   `VERIFIED` throughout), plus one bounded injected-delay scenario proving the
   real deadline/watchdog machinery tolerates a slow-but-legal decision.
-  `integration_lab/evidence/batch4a/reliability/`.
+  (Raw logs produced during development in the full project workspace; not
+  included in this single-repo package.)
 
 ## Live GUI (Batch 4A)
 
@@ -143,7 +149,8 @@ GUI-reachable dataclass grows an `opponent_true_position`-shaped field). The
 background game loop runs on its own asyncio event loop in a separate thread so
 network activity never blocks the UI. Real two-process runs (a smoke sub-game
 and a full six-sub-game series, both `--gui`) completed successfully and
-replay-verified — `integration_lab/evidence/batch4a/gui_demo/`. Manual
+replay-verified (raw capture produced during development in the full project
+workspace; not included in this single-repo package). Manual
 screenshot instructions: `screenshots/README.md`.
 
 ## Graphical replay viewer (Batch 4A)
@@ -157,9 +164,9 @@ fixed while building this: this repo's own verifier cannot correctly recompute
 the opponent's differently-shaped commitment hashes, so the opponent's side is
 loaded for display only, honestly labeled `NOT_INDEPENDENTLY_VERIFIED_FROM_THIS_SIDE`,
 never a fabricated verdict. A real TAMPERED demonstration (a copy of real
-evidence, one field edited) is preserved at
-`integration_lab/evidence/batch4a/replay_demo/`; the original evidence was never
-touched.
+evidence, one field edited) was preserved during development in the full
+project workspace (not included in this single-repo package); the original
+evidence was never touched.
 
 ## Gmail reporter (Batch 4A, dry-run only)
 
@@ -172,7 +179,7 @@ live outside this repo) and is gated behind Manual Gate C. Scope is hardcoded to
 `gmail.send` only — `gmail.modify`/`.compose`/`.readonly`/full-mailbox scopes are
 rejected in code, not just documented. The reporter refuses to build a report
 from artifacts that fail the real replay verifier (tested,
-`integration_lab/evidence/batch4a/gmail_dry_run/invalid_report_rejection.json`).
+`_post4b_supplementary_evidence/batch4a_gmail_dry_run/invalid_report_rejection.json`).
 Mandatory recipient: `rmisegal+uoh26finalgame@gmail.com` (Appendix F Table 20).
 
 ## Public-network preparation (Batch 4A, never activated)
@@ -197,13 +204,15 @@ real, reconfirmed property (not a bug) that limits statistical power for
 rate-based comparisons — addressed via causal-ablation and behavioral-fixture
 methods instead of aggregate rate comparisons. Real non-ceiling differences:
 advanced Police's higher belief-entropy reduction (3.27 vs 2.48 bits) and
-nonzero barrier usage on paired seeds. Full data:
-`integration_lab/evidence/batch3_6/secondary_metrics.csv`.
+nonzero barrier usage on paired seeds. Full raw data was produced during
+development in the full project workspace and is not included in this
+single-repo package.
 
 ## Limitations
 
 See `docs/LIMITATIONS.md` — kept current every batch, never claiming a
-readiness level higher than `integration_lab/audit/PROGRESS.md` supports.
+readiness level higher than `_post4b_supplementary_evidence/audit/PROGRESS.md`
+supports.
 
 ## Reproduction
 
@@ -219,14 +228,14 @@ uv run python -m police_peer verify-replay --artifacts <dir>
 ```
 
 Full reproducibility notes (exact commands, seed ranges) per batch:
-`integration_lab/evidence/batch3_6/reproducibility.md`.
+`_post4b_supplementary_evidence/batch3_6_reproducibility.md`.
 
 ## Third-party attribution and licensing caution
 
 See `THIRD_PARTY_NOTICES.md`. Reused elements are limited to small, attributed
 adaptations (a commit-reveal hash shape, a token-bucket formula, an OAuth
 bootstrap pattern, a protocol naming convention) — never substantial verbatim
-code. Full classification: `integration_lab/audit/reference_reuse_plan.md`.
+code. Full classification: `_post4b_supplementary_evidence/audit/reference_reuse_plan.md`.
 **Repository visibility (public vs. private) is an unresolved decision**
 (Manual Gate E) — the reference repository's EULA does not unambiguously
 authorize redistributing adapted/attributed elements into a separate public
@@ -235,7 +244,7 @@ repository; do not make this repository public without your explicit review.
 ## Current readiness and remaining manual gates
 
 **`LOCAL_READY`.** Not `NETWORK_READY`/`LEAGUE_READY`/`SUBMISSION_READY`.
-Remaining, all requiring your explicit action (`integration_lab/audit/manual_gates.md`):
+Remaining, all requiring your explicit action (`_post4b_supplementary_evidence/audit/manual_gates.md`):
 Gate A (public endpoint + tunnel token), Gate B (real opponent identity/URL/schedule),
 Gate C (Gmail OAuth consent + send approval), Gate E (repository visibility),
 Gate F (GitHub repo creation/push).

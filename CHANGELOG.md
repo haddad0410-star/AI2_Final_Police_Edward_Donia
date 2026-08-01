@@ -55,7 +55,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 - 18 real, human-captured screenshots (9 per repo) added under
   `screenshots/`; both `screenshots/README.md` files corrected where they
   previously pointed at commands that couldn't produce the described
-  capture. Full index: `integration_lab/evidence/batch4b/MANUAL_HANDOFF.md`.
+  capture. Full index:
+  `_post4b_supplementary_evidence/batch4b/MANUAL_HANDOFF.md`.
 - 458 tests, 94.15% coverage, 0 Ruff violations, all files <=150 meaningful
   lines.
 
@@ -80,7 +81,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   when both sides are fully bilaterally verified.
 - **Gmail report bilateral gate**: `report --opponent-artifacts-dir <dir>`
   refuses to build a report unless full bilateral verification passes.
-- Evidence: `integration_lab/evidence/batch4b/` — schema audit, 10
+- Evidence: `_post4b_supplementary_evidence/batch4b/` — schema audit, 10
   byte-identical cross-repo test vectors, a 21-category bilateral tamper
   matrix (all detected, both directions), a real six-sub-game two-process
   FastMCP series with `FULL_BILATERAL_VERIFICATION=true` both sides, and
@@ -133,10 +134,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   gating instruction): three consecutive real six-sub-game HTTP series
   plus one bounded injected-delay scenario (new diagnostic-only
   `DelayedPoliceBrain` test fixture) all passed cleanly.
-- Workspace scripts (`integration_lab/scripts/`): `check_public_endpoint.py`,
-  `check_peer_auth.py`, `check_port_release.py`, `package_match_evidence.py`
-  — all preparation/verification only, no network calls, no packaging of
-  unverified evidence.
+- Workspace scripts (`check_public_endpoint.py`, `check_peer_auth.py`,
+  `check_port_release.py`, `package_match_evidence.py`) — all
+  preparation/verification only, no network calls, no packaging of
+  unverified evidence. These scripts live in the multi-repo development
+  workspace and are not included in this single-repo package.
 
 ### Added — Implementation Batch 3.6 (epistemic fairness, scent timing,
 ### capture correctness, and strategy distinguishability audit)
@@ -149,7 +151,7 @@ independent fairness check before being trusted).
   proof that the hint intent verdict is absent from the live `reveal`
   payload and present/verifiable only at final audit.
 - Corrected a documentation-only inaccuracy in
-  `integration_lab/audit/protocol_contract.md` §3.2: the `scent_grid`
+  `_post4b_supplementary_evidence/audit/protocol_contract.md` §3.2: the `scent_grid`
   field name was a project paraphrase of the book's prose, not a literal
   book-mandated identifier (confirmed via full-text PDF search) — the
   implemented field/semantics are unchanged.
@@ -160,7 +162,10 @@ independent fairness check before being trusted).
   strategy behavioral-difference fixtures, non-ceiling secondary metrics,
   an 800-game multi-scale `RESEARCH_ONLY` robustness check, 3 new
   research/production-equivalence tests, and a 4-series real HTTP
-  validation run. See `integration_lab/evidence/batch3_6/`.
+  validation run. Full audit evidence was produced during development in
+  the full project workspace and is not included in this single-repo
+  package (the 7 associated figures are bundled at
+  `_post4b_supplementary_evidence/batch3_6_figures/`).
 
 ### Fixed — Implementation Batch 3.5 (observation-pipeline repair)
 
@@ -207,8 +212,9 @@ independent fairness check before being trusted).
   96.07%.
 - Held-out (400 games) and real-HTTP (18 sub-games, 3 series) results:
   Police capture rate 0% -> 100% in every matchup (new ceiling tie,
-  honestly analyzed, not claimed as strategy superiority). Full analysis:
-  `integration_lab/evidence/batch3_5/`.
+  honestly analyzed, not claimed as strategy superiority). Full analysis
+  was produced during development in the full project workspace and is
+  not included in this single-repo package.
 
 ### Added — Implementation Batch 3
 
@@ -239,12 +245,14 @@ independent fairness check before being trusted).
   six-sub-game HTTP series found **no demonstrated capture-rate
   improvement** over `BaselinePoliceBrain` in the current experimental
   configuration — root cause and two bounded redesign iterations
-  documented in `integration_lab/evidence/batch3/strategy_research/limitations.md`.
-  Reported honestly as inconclusive, not hidden.
-- `integration_lab/strategy_research/` (research-only local simulator,
-  leakage tests, experiment runner, statistics, figures) and
-  `integration_lab/run_advanced_strategy_series.py` (real HTTP validation
-  launcher) — see `integration_lab/evidence/batch3/`.
+  documented during development in the full project workspace (not
+  included in this single-repo package). Reported honestly as
+  inconclusive, not hidden.
+- A research-only local simulator (leakage tests, experiment runner,
+  statistics, figures) and a real-HTTP validation launcher script were
+  used to produce this batch's evidence; both scripts and the underlying
+  evidence live in the multi-repo development workspace and are not
+  included in this single-repo package.
 
 ### Changed — Session recovery step C
 
@@ -264,11 +272,14 @@ independent fairness check before being trusted).
   `docs/schemas/declaration.schema.json`, byte-identical (SHA-256
   `a995d657e81ed920f87f3ef39c3281550d346f38c18468cf7fdee79cd42a97bd`) to the
   independently-built Thief repo's copy; cross-repo fixture equivalence
-  verified by `integration_lab/scripts/compare_declaration_schemas.py`.
+  verified by `compare_declaration_schemas.py` (development-workspace
+  script, not included in this single-repo package; most recently
+  re-confirmed PASS in item 18 of
+  `_post4b_supplementary_evidence/post4b_finalization/FINAL_LOCAL_AUDIT.md`).
   23 tests in `tests/unit/test_declaration.py` (was a smaller set pre-step-C).
-  257 -> 270 tests, both Ruff/format clean. See
-  `integration_lab/evidence/session_recovery_step_c/task2_declaration_schema/`
-  and `.../declaration_schema_audit.md`.
+  257 -> 270 tests, both Ruff/format clean. Full write-up produced during
+  development in the full project workspace; not included in this
+  single-repo package.
 
 ### Fixed — Session recovery step B
 
@@ -285,8 +296,9 @@ independent fairness check before being trusted).
   `sdk/negotiation_runner.py` and `sdk/game_runner.py` updated to the new
   API; the old `ShutdownController`/`serve_until_shutdown`/`stop_server` API
   removed entirely. 11 new regression tests
-  (`tests/integration/test_server_lifecycle.py`). See
-  `integration_lab/evidence/session_recovery_step_b/server_lifecycle/`.
+  (`tests/integration/test_server_lifecycle.py`). Full write-up produced
+  during development in the full project workspace; not included in this
+  single-repo package.
 - `services/series_artifacts.py` (new) — artifact generation (Phase 11)
   existed and was unit-tested in isolation but was never called from
   `run_series_headless`/the CLI; a real `run-series` invocation produced no
@@ -300,10 +312,11 @@ independent fairness check before being trusted).
   sub-game record (a number-keyed dict lookup silently kept only the last
   one); added `_check_no_duplicate_sub_games` + a regression test.
 
-See `integration_lab/evidence/session_recovery_step_b/police_phase_10_12/`
-for the full verification writeup (series runtime and artifact
-model/save layer were independently confirmed COMPLETE_AND_VERIFIED; the
-above two items were the only genuine defects found).
+The full verification writeup (produced during development in the full
+project workspace; not included in this single-repo package) independently
+confirmed the series runtime and artifact model/save layer as
+COMPLETE_AND_VERIFIED; the above two items were the only genuine defects
+found.
 
 ### Fixed — Session recovery step A
 
@@ -328,8 +341,9 @@ above two items were the only genuine defects found).
   start/stop built on a directly-owned `uvicorn.Server`
   (`should_exit = True`, not task cancellation) — verified to actually
   release the port afterward. No production code was changed; this is
-  entirely a test-infrastructure fix. See `integration_lab/evidence/
-  session_recovery_step_a/police_port_fix/root_cause_and_fix.md`.
+  entirely a test-infrastructure fix. Full root-cause write-up produced
+  during development in the full project workspace; not included in this
+  single-repo package.
 
 ### Added — Implementation Batch 1
 - Configuration: `shared/{errors,config_sections,config_validation,config_models,
@@ -359,5 +373,5 @@ above two items were the only genuine defects found).
 ### Not yet implemented
 - Full turn-by-turn game loop, commit-reveal/audit lifecycle, strategy brains, state
   machine/DeadlineTracker/Watchdog, GUI, replay viewer, Gmail reporter, league runner.
-  See `integration_lab/audit/PROGRESS.md` for the current readiness level (still
+  See `_post4b_supplementary_evidence/audit/PROGRESS.md` for the current readiness level (still
   below `LOCAL_READY`).

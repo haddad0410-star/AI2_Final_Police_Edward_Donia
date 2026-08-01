@@ -1,6 +1,6 @@
 # Strategy — Police Peer (role-local summary)
 
-**Canonical source:** `integration_lab/audit/strategy_proposals.md` — read that first
+**Canonical source:** `_post4b_supplementary_evidence/audit/strategy_proposals.md` — read that first
 for the full design, invariants, complexity limits, and evaluation metrics.
 
 This role ships two brains, both implemented (Implementation Batch 3):
@@ -10,10 +10,12 @@ This role ships two brains, both implemented (Implementation Batch 3):
    Task 2, regression-tested) as the comparison point for the strategy below.
 2. **`BeliefCutoffPoliceBrain`** (`strategy/belief_cutoff_police_brain.py`) — original
    advanced strategy. Batch 3 found no demonstrated capture-rate improvement,
-   root-caused to a real observation-pipeline defect (see
-   `integration_lab/evidence/batch3/strategy_research/limitations.md`) — since
-   repaired in **Implementation Batch 3.5**
-   (`integration_lab/evidence/batch3_5/pipeline_root_cause.md`). Held-out and
+   root-caused to a real observation-pipeline defect (full analysis
+   produced during development in the full project workspace; not
+   included in this single-repo package) — since
+   repaired in **Implementation Batch 3.5** (root-cause write-up likewise
+   produced during development, not included in this single-repo
+   package). Held-out and
    real-HTTP re-evaluation now shows **100% capture rate for both baseline and
    advanced Police** (a new ceiling tie — still no demonstrated capture-RATE
    improvement), but a real, distinct, previously-nonexistent capability: the
@@ -25,10 +27,10 @@ This role ships two brains, both implemented (Implementation Batch 3):
    own minimum-utility floor), making the gate mathematically unreachable
    given the real ~0.30 belief-confidence ceiling under continuous evidence;
    now split into independent `barrier_confidence_gate` (default 0.20) and
-   `barrier_utility_floor` (default 0.40) fields — see
-   `integration_lab/evidence/batch3_5/barrier_root_cause.md`. Full analysis:
-   `integration_lab/evidence/batch3_5/strategy_research/acceptance_criteria_evaluation.md`.
-   Reported honestly, not hidden. This is a genuinely more sophisticated,
+   `barrier_utility_floor` (default 0.40) fields. Full root-cause and
+   acceptance-criteria analysis was produced during development in the
+   full project workspace and is not included in this single-repo
+   package. Reported honestly, not hidden. This is a genuinely more sophisticated,
    tested implementation, but no capture-rate superiority claim is made.
    **Implementation Batch 3.6** ran a dedicated fairness/correctness audit
    on top of this result: an 800-game multi-scale robustness check (7x7
@@ -39,7 +41,8 @@ This role ships two brains, both implemented (Implementation Batch 3):
    `BeliefCutoffPoliceBrain` and `BaselinePoliceBrain` genuinely choose
    different actions from identical inputs. Final classification: **C**
    (genuine ceiling) **with D** (real behavioral differences) **as a
-   corollary** — see `integration_lab/evidence/batch3_6/conclusion.md`.
+   corollary** (full write-up produced during development in the full
+   project workspace; not included in this single-repo package).
 
 ### `BeliefCutoffPoliceBrain` design
 

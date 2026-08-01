@@ -1,11 +1,14 @@
 # Experiments — Police Peer
 
 Metric list and the tuning/held-out seed split were pre-registered in
-`integration_lab/audit/strategy_proposals.md` Sections 0 and 5, written before
-any strategy code existed, specifically to prevent post-hoc seed selection or
-cherry-picked comparisons. This file is kept current every batch — never
-allowed to claim a result higher than the evidence in
-`integration_lab/audit/PROGRESS.md` and `integration_lab/evidence/` supports.
+`_post4b_supplementary_evidence/audit/strategy_proposals.md` Sections 0 and 5,
+written before any strategy code existed, specifically to prevent post-hoc
+seed selection or cherry-picked comparisons. This file is kept current every
+batch — never allowed to claim a result higher than the evidence in
+`_post4b_supplementary_evidence/audit/PROGRESS.md` supports (the full raw
+evidence tree was produced during development in the full project workspace;
+only the subset bundled under `_post4b_supplementary_evidence/` in this
+package is directly openable here).
 
 ## Current results (Implementation Batch 3.6)
 
@@ -38,12 +41,16 @@ allowed to claim a result higher than the evidence in
   corollary**. Not A, not B, not E.
 
 Full data and figures:
-- `integration_lab/evidence/batch3_5/strategy_research/` (400-game
-  held-out results, real HTTP series, `acceptance_criteria_evaluation.md`)
-- `integration_lab/evidence/batch3_6/` (`secondary_metrics.csv/json`,
-  `robustness_results.csv/json`, `causal_results.csv/json`,
-  `strategy_behavioral_differences.md`, `conclusion.md`,
-  `figures/*.png` — 7 figures)
+- The 400-game held-out results, real HTTP series, and
+  `acceptance_criteria_evaluation.md` (Batch 3.5) were produced during
+  development in the full project workspace and are not included in this
+  single-repo package.
+- The 7 Batch 3.6 figures are bundled at
+  `_post4b_supplementary_evidence/batch3_6_figures/*.png`. The underlying
+  `secondary_metrics.csv/json`, `robustness_results.csv/json`,
+  `causal_results.csv/json`, `strategy_behavioral_differences.md`, and
+  `conclusion.md` were produced during development in the full project
+  workspace and are not included in this single-repo package.
 
 No performance claim is made anywhere in this repository without the raw
-data in the paths above to back it.
+data described above to back it.

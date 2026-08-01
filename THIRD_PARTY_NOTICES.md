@@ -2,7 +2,7 @@
 
 This file lists every element of this repository that was adapted, in any form, from
 material outside our own original work. Full reasoning and classification for each
-item lives in `integration_lab/audit/reference_reuse_plan.md`. Nothing below is
+item lives in `_post4b_supplementary_evidence/audit/reference_reuse_plan.md`. Nothing below is
 substantial verbatim code; each item is either a small teaching-sample idiom explicitly
 marked reusable by its source, or a narrow interoperability convention.
 
@@ -29,5 +29,6 @@ marked reusable by its source, or a narrow interoperability convention.
    reused — this project's scope is `gmail.send` only, per Appendix A of the primary
    rule book.
 
-Nothing else in this repository is derived from outside sources as of this scaffold.
-This file will be updated as implementation proceeds, before any public release.
+Nothing else in this repository is derived from outside sources. This file
+would be revisited only if new third-party-derived material is added in a
+future change.

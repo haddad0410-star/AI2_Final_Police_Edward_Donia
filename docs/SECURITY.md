@@ -2,7 +2,7 @@
 
 ## Threat model summary
 
-Full detail: `integration_lab/audit/risk_register.md` and (once written)
+Full detail: `_post4b_supplementary_evidence/audit/risk_register.md` and (once written)
 `reports/threat_model.md`. Core adversarial assumption per the book (Ch.5.2): the
 opponent may attempt to rewrite history, deny a committed move, or lie about a
 capture/win claim. Defense: SHA-256 commit-reveal (book Ch.5.3) plus a mutual
@@ -13,15 +13,20 @@ end-of-game audit that recomputes every hash.
 - `credentials.json` / `token.json` live outside this repository, path supplied via
   `GOOGLE_OAUTH_CREDENTIAL_DIR` (see `.env-example`).
 - `.gitignore` blocks `.env`, `credentials.json`, `token.json`, `client_secret*.json`.
-- `integration_lab/security_scan.py` (implemented, Batch 1) asserts none of these are
-  present/tracked, scans for API-key-like patterns, hardcoded Windows paths, reference-
-  repo group identities, hardcoded paid-model-provider defaults, and a wrong
-  `num_games` in the real league config. Real output (clean):
-  `integration_lab/evidence/security_scan_output.json`.
-- `integration_lab/verify_isolation.py` (implemented, Batch 1) asserts no cross-repo
-  imports, no cross-repo config paths, no opponent-true-position field names, and no
-  shared-state module hints. Real output (clean):
-  `integration_lab/evidence/verify_isolation_output.json`.
+- `security_scan.py` (implemented, Batch 1; lives in the multi-repo
+  development workspace, not included in this single-repo package) asserts
+  none of these are present/tracked, scans for API-key-like patterns,
+  hardcoded Windows paths, reference-repo group identities, hardcoded
+  paid-model-provider defaults, and a wrong `num_games` in the real league
+  config. Most recently re-run and recorded clean
+  (`"clean": true`, no findings) in item 16 of
+  `_post4b_supplementary_evidence/post4b_finalization/FINAL_LOCAL_AUDIT.md`.
+- `verify_isolation.py` (implemented, Batch 1; same development workspace,
+  not included in this single-repo package) asserts no cross-repo imports,
+  no cross-repo config paths, no opponent-true-position field names, and no
+  shared-state module hints. Most recently re-run and recorded clean
+  (`"isolated": true`, no violations) in item 15 of
+  `_post4b_supplementary_evidence/post4b_finalization/FINAL_LOCAL_AUDIT.md`.
 
 ## Batch 1 protocol-schema validation (implemented)
 
@@ -51,8 +56,9 @@ audit implementation is a later batch. This document will be updated again then.
   not reliably close the underlying Uvicorn listening socket (verified by
   direct experiment) — a real, if low-severity, resource leak in
   production. Replaced with a `ManagedServer` class doing a genuinely
-  graceful shutdown; see the CHANGELOG and `integration_lab/evidence/
-  session_recovery_step_b/server_lifecycle/`.
+  graceful shutdown; see the CHANGELOG (raw evidence produced during
+  development in the full project workspace; not included in this
+  single-repo package).
 - **Replay-verifier hardening**: the headless replay verifier (Phase 12)
   could not detect a duplicate/relabeled sub-game record (two artifact
   files, different names, claiming the same `sub_game_number` internally)
@@ -61,8 +67,9 @@ audit implementation is a later batch. This document will be updated again then.
 - The above two items and the Phase 10-12 tamper-detection test suite
   (commit-reveal audit, nonce reuse, sequence ordering, barrier/capture
   bounds, score recomputation, config-hash/game_uid consistency) are all
-  now implemented, tested, and independently re-verified — see
-  `integration_lab/evidence/session_recovery_step_b/police_phase_10_12/`.
+  now implemented, tested, and independently re-verified (raw evidence
+  produced during development in the full project workspace; not included
+  in this single-repo package).
   Still not done: a real cross-process tamper drill against an actual
   opponent, or the mutual audit.
 
@@ -81,8 +88,12 @@ audit implementation is a later batch. This document will be updated again then.
   integrity check beyond the existing nonce-based seal/verify exchange.
   Cross-repo compatibility (not a security boundary by itself, but a
   precondition for any real declaration exchange) verified by
-  `integration_lab/scripts/compare_declaration_schemas.py`; see
-  `integration_lab/evidence/session_recovery_step_c/task2_declaration_schema/`.
+  `compare_declaration_schemas.py` (development-workspace script, not
+  included in this single-repo package; original Session-recovery-step-C
+  evidence likewise produced during development and not included here).
+  Most recently re-run and recorded PASS (schema files byte-identical,
+  16/16 non-intrinsic declaration fields match exactly) in item 18 of
+  `_post4b_supplementary_evidence/post4b_finalization/FINAL_LOCAL_AUDIT.md`.
 
 ## Batch 4A additions
 
@@ -131,7 +142,7 @@ audit implementation is a later batch. This document will be updated again then.
   but a genuine top-level field in Thief. 14 of ~16 payload fields already
   had identical shape. Both repos' canonical-JSON encoders were already
   byte-identical. Full field-by-field audit:
-  `integration_lab/evidence/batch4b/commitment_schema_audit.md`.
+  `_post4b_supplementary_evidence/batch4b/commitment_schema_audit.md`.
 - **Canonical schema unified** (`domain/crypto/payload.py`,
   `SCHEMA_VERSION = "commitment/1"`): `state` replaced by a flat
   `position` tuple field; `config_sha256` promoted to a real top-level
@@ -145,13 +156,13 @@ audit implementation is a later batch. This document will be updated again then.
   already-tested verification pipeline (`services/replay_verifier.py`,
   `replay_checks.py`) correctly recomputes and verifies a genuine Thief
   `commitment/1` record too — confirmed by 10 byte-identical cross-repo
-  test vectors (`integration_lab/evidence/batch4b/test_vectors/`), a
+  test vectors (`_post4b_supplementary_evidence/batch4b/test_vectors/`), a
   21-category bilateral tamper matrix where BOTH repos' own verifiers
   independently detect every mutation
-  (`integration_lab/evidence/batch4b/tamper_matrix/`, `all_detected=true`),
+  (`_post4b_supplementary_evidence/batch4b/tamper_matrix/`, `all_detected=true`),
   and a real six-sub-game two-process FastMCP series where both sides'
   `replay` command reports `FULL_BILATERAL_VERIFICATION=true`
-  (`integration_lab/evidence/batch4b/bilateral_series/`). This repo never
+  (`_post4b_supplementary_evidence/batch4b/bilateral_series/`). This repo never
   imports `thief_peer`; it only calls its own crypto/verifier on
   whichever directory it's given (`services/bilateral_verify.py`).
 - **New role-consistency and unknown-field checks**
@@ -175,7 +186,7 @@ audit implementation is a later batch. This document will be updated again then.
   `--send`) on full bilateral verification via
   `services/bilateral_verify.py`, not merely this side's own
   `verify_replay`. Real evidence, both accept and refuse paths:
-  `integration_lab/evidence/batch4b/gmail_bilateral_gate/`.
+  `_post4b_supplementary_evidence/batch4b/gmail_bilateral_gate/`.
 
 ## Post-Batch-4B additions — narrow `McpError` connectivity classification
 
