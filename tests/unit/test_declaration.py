@@ -269,14 +269,25 @@ def test_alias_with_matching_value_is_not_ambiguous() -> None:
 
 
 def test_correct_git_commit_hash_matches_real_head() -> None:
-    real = subprocess.run(
-        ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"],
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.strip()
-    assert git_commit_hash(REPO_ROOT) == real
-    assert len(real) == 40
+    """When ``.git`` exists, must match the real HEAD exactly. When it
+    doesn't (a clean-extracted review ZIP, which deliberately excludes
+    ``.git``), must match the packaged ``BUILD_COMMIT`` file instead --
+    never silently skipped either way."""
+    if (REPO_ROOT / ".git").exists():
+        real = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        assert git_commit_hash(REPO_ROOT) == real
+        assert len(real) == 40
+        return
+    build_commit = REPO_ROOT / "BUILD_COMMIT"
+    assert build_commit.exists(), "no .git and no BUILD_COMMIT -- commit provenance unverifiable"
+    expected = build_commit.read_text(encoding="utf-8").strip()
+    assert git_commit_hash(REPO_ROOT) == expected
+    assert len(expected) == 40
 
 
 def test_code_version_read_from_pyproject() -> None:

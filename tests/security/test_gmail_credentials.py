@@ -65,15 +65,15 @@ def test_full_mailbox_scope_rejected() -> None:
 
 def test_no_credential_files_committed_in_repo() -> None:
     """credentials.json/token.json/client_secret* must never exist inside
-    this repository, even outside git (a stray local file is still risky)."""
-    import subprocess
+    this repository, even outside git (a stray local file is still risky).
+    Falls back to a full filesystem scan when ``.git`` is absent (e.g. a
+    clean-extracted review ZIP) -- never silently skipped."""
     from pathlib import Path
 
+    from _repo_scan import repo_files
+
     repo_root = Path(__file__).resolve().parents[2]
-    tracked = subprocess.run(
-        ["git", "ls-files"], cwd=repo_root, capture_output=True, text=True, check=True
-    ).stdout.splitlines()
-    for name in tracked:
+    for name in repo_files(repo_root):
         lowered = name.lower()
         assert "credentials.json" not in lowered
         assert "token.json" not in lowered

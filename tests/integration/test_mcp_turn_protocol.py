@@ -59,7 +59,7 @@ def test_receive_turn_and_move_alias_share_path() -> None:
                 )
                 r3 = await client.call_tool(
                     "submit_audit",
-                    {"message": {"envelope": _turn("reveal", 0, 2)["envelope"], "records": []}},
+                    {"payload": {"envelope": _turn("reveal", 0, 2)["envelope"], "records": []}},
                 )
                 r4 = await client.call_tool(
                     "receive_control", {"message": {"kind": "status", "status_text": "ok"}}

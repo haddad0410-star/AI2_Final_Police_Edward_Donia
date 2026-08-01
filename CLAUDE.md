@@ -26,7 +26,7 @@ uv run ruff format --check .
 uv run pytest -v
 uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=85
 uv run python scripts/security_scan.py          # not yet implemented
-uv run python scripts/check_file_lengths.py     # not yet implemented
+uv run python scripts/check_file_lengths.py
 ```
 
 ## No-secrets policy

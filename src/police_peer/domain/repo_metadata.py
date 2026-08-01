@@ -1,8 +1,11 @@
 """Accurate, actually-computed repository metadata for the declaration.
 
 The git commit hash is obtained by really running ``git rev-parse HEAD`` against
-THIS repo -- never assumed. The code version is read from ``pyproject.toml``.
-Both fail loudly-but-safely to a marker string rather than a fabricated value.
+THIS repo when a ``.git`` directory is present -- never assumed. A clean-extracted
+review ZIP deliberately excludes ``.git``; for that case a ``BUILD_COMMIT`` file
+(written into the ZIP at packaging time from the real HEAD at build time) is
+read instead, so provenance is never silently lost, never fabricated. The code
+version is read from ``pyproject.toml``.
 """
 
 from __future__ import annotations
@@ -13,7 +16,8 @@ from pathlib import Path
 
 
 def git_commit_hash(repo_root: Path) -> str:
-    """The exact ``HEAD`` commit of ``repo_root`` via a real subprocess call."""
+    """The exact commit this code was built from: a real ``git rev-parse
+    HEAD`` when ``.git`` exists, else the packaged ``BUILD_COMMIT`` file."""
     try:
         out = subprocess.run(
             ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
@@ -23,8 +27,11 @@ def git_commit_hash(repo_root: Path) -> str:
             check=True,
         )
         return out.stdout.strip()
-    except (OSError, subprocess.SubprocessError):  # pragma: no cover - git always present here
-        return "unavailable: git rev-parse failed"
+    except (OSError, subprocess.SubprocessError):
+        build_commit = repo_root / "BUILD_COMMIT"
+        if build_commit.exists():
+            return build_commit.read_text(encoding="utf-8").strip()
+        return "unavailable: no .git and no BUILD_COMMIT file"
 
 
 def code_version(pyproject_path: Path) -> str:

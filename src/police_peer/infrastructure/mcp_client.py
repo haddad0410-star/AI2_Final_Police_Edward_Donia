@@ -66,7 +66,12 @@ async def call_receive_turn(url: str, message: dict, timeout_seconds: float = 30
 
 
 async def call_submit_audit(url: str, message: dict, timeout_seconds: float = 30.0) -> dict:
-    return await _call(url, "submit_audit", {"message": message}, timeout_seconds)
+    """The wire argument name is ``payload`` (matching
+    ``integration_lab/audit/protocol_contract.md``'s ``submit_audit(payload:
+    dict)`` -- a real cross-repo mismatch found and fixed post-Batch-4B: this
+    tool went unused in real gameplay until the bilateral result-agreement
+    fix first actually invoked it over real HTTP)."""
+    return await _call(url, "submit_audit", {"payload": message}, timeout_seconds)
 
 
 async def call_receive_control(url: str, message: dict, timeout_seconds: float = 30.0) -> dict:

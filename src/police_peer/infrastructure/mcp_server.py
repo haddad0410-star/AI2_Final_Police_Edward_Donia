@@ -98,9 +98,11 @@ def build_peer_server(
         return router.handle_turn(message)
 
     @mcp.tool
-    def submit_audit(message: dict) -> dict:
-        """Final audit / result-agreement submission."""
-        return router.handle_audit(message)
+    def submit_audit(payload: dict) -> dict:
+        """Final audit / result-agreement submission. Wire argument name is
+        ``payload``, matching ``protocol_contract.md`` (was ``message`` --
+        a real cross-repo mismatch, fixed post-Batch-4B)."""
+        return router.handle_audit(payload)
 
     @mcp.tool
     def receive_control(message: dict) -> dict:

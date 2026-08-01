@@ -33,6 +33,14 @@ KNOWN_TURN_TYPES = frozenset({"commitment", "commitment_ack", "reveal", "capture
 #: States in which this peer will not accept game messages at all.
 _NON_RECEIVING = TERMINAL_STATES | {PeerState.INITIALIZING}
 
+#: A `result_agreement` audit submission is expected to arrive AFTER this
+#: peer's own series has reached SERIES_COMPLETE (the whole point is to
+#: exchange final totals once each side is done) -- so it alone is accepted
+#: in that one otherwise-terminal state; ERROR/QUIT/INITIALIZING still reject.
+_NON_RECEIVING_FOR_AUDIT = (TERMINAL_STATES - {PeerState.SERIES_COMPLETE}) | {
+    PeerState.INITIALIZING
+}
+
 _REQUIRED_ENVELOPE = ("game_uid", "sender", "sub_game_number", "step", "sequence_id")
 
 
@@ -51,7 +59,9 @@ class TurnRouter:
     expected_game_uid: str
     expected_config_sha256: str
 
-    def _validate_envelope(self, message: dict) -> dict | None:
+    def _validate_envelope(
+        self, message: dict, *, non_receiving: frozenset = _NON_RECEIVING
+    ) -> dict | None:
         if not isinstance(message, dict):
             return _reject("MALFORMED", "message must be an object")
         envelope = message.get("envelope")
@@ -67,7 +77,7 @@ class TurnRouter:
         config_hash = message.get("config_sha256")
         if config_hash is not None and config_hash != self.expected_config_sha256:
             return _reject("CONFIG_MISMATCH", "config_sha256 does not match")
-        if self.machine.state in _NON_RECEIVING:
+        if self.machine.state in non_receiving:
             return _reject("WRONG_STATE", f"not accepting messages in {self.machine.state}")
         return None
 
@@ -110,12 +120,24 @@ class TurnRouter:
         return {"ok": True, "duplicate": False}
 
     def handle_audit(self, message: dict) -> dict:
-        """Validate and enqueue a final-audit / result-agreement submission."""
-        rejection = self._validate_envelope(message)
+        """Validate and enqueue a final-audit / result-agreement submission.
+        Accepted even once this peer's OWN series has reached SERIES_COMPLETE
+        -- exchanging final totals is only meaningful once each side is done."""
+        rejection = self._validate_envelope(message, non_receiving=_NON_RECEIVING_FOR_AUDIT)
         if rejection is not None:
             return rejection
-        if "records" not in message and message.get("message_type") != "result_agreement":
+        message_type = message.get("message_type")
+        if "records" not in message and message_type != "result_agreement":
             return _reject("MALFORMED", "audit needs records or a result_agreement type")
+        if message_type == "result_agreement":
+            env = message["envelope"]
+            key = (env["game_uid"], env["sender"], "result_agreement")
+            status = self.inbox.duplicate_status(key, message)
+            if status == inbox_mod.CONFLICT:
+                return _reject("CONFLICTING_DUPLICATE", f"different result_agreement for {key}")
+            if status == inbox_mod.IDENTICAL:
+                return {"ok": True, "duplicate": True}
+            self.inbox.remember(key, message)
         if self.inbox.is_full():
             return _reject("QUEUE_FULL", "inbox capacity reached")
         self.inbox.enqueue_audit(message)

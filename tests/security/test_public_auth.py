@@ -52,19 +52,16 @@ def test_token_never_appears_in_error_message() -> None:
 
 def test_no_token_field_in_committed_config_files() -> None:
     """No JSON/TOML config file in this repo may contain a bind-token-like
-    field name -- the token must live only in the environment."""
-    import subprocess
+    field name -- the token must live only in the environment. Falls back to
+    a full filesystem scan when ``.git`` is absent (e.g. a clean-extracted
+    review ZIP) -- never silently skipped."""
     from pathlib import Path
 
+    from _repo_scan import repo_files
+
     repo_root = Path(__file__).resolve().parents[2]
-    tracked = subprocess.run(
-        ["git", "ls-files", "*.json", "*.toml"],
-        cwd=repo_root,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.splitlines()
-    for name in tracked:
+    names = [n for n in repo_files(repo_root) if n.endswith((".json", ".toml"))]
+    for name in names:
         content = (repo_root / name).read_text(encoding="utf-8", errors="ignore").lower()
         assert "public_bind_token" not in content, f"{name} must not contain a bind token"
 

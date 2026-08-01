@@ -1,14 +1,10 @@
 """SDK orchestration for the headless game CLIs (Batch 2, Phases 9-11).
 
 Wires config loading, this peer's own FastMCP server, the HTTP opponent
-transport, the sub-game/series runtimes, and artifact writing into two async
-entrypoints. Business logic lives here (not in ``__main__``) per CLAUDE.md.
-
-The live cross-process path was validated for real in session recovery step C
-(Task 5): two independent OS processes, real HTTP, real commit-reveal, ending
-in a genuine capture/survival/technical-loss outcome -- see
-integration_lab/evidence/session_recovery_step_c/one_subgame/. The runtimes
-it drives are also covered by tests against in-process fakes.
+transport, the sub-game/series runtimes, the end-of-series bilateral result
+agreement, and artifact writing into two async entrypoints. Business logic
+lives here (not in ``__main__``), per CLAUDE.md. Validated over real,
+independent, two-process HTTP runs -- see docs/PROTOCOL.md.
 """
 
 from __future__ import annotations
@@ -23,6 +19,7 @@ from police_peer.infrastructure.http_transport import HttpOpponentTransport
 from police_peer.infrastructure.mcp_server import build_peer_server
 from police_peer.infrastructure.server_lifecycle import ManagedServer
 from police_peer.services.game_ids import derive_game_id, derive_game_uid
+from police_peer.services.result_agreement import finalize_series_agreement
 from police_peer.services.series_artifacts import write_series_artifacts
 from police_peer.services.series_runtime import run_series
 from police_peer.services.subgame_runtime import run_single_subgame
@@ -98,14 +95,9 @@ async def run_series_headless(
     max_polls: int = 300,
     artifacts_dir: Path | None = None,
 ) -> dict:
-    """Run a full (or --smoke single) series against a live opponent server.
-
-    When `artifacts_dir` is given, writes the four standardized JSON
-    artifacts (declaration, one config + log per sub-game actually played,
-    result) via `series_artifacts.write_series_artifacts` -- reflecting
-    exactly what happened, including a series that ended early on a
-    technical loss.
-    """
+    # `artifacts_dir`, if given, gets the four standardized JSON artifacts
+    # (declaration, one config+log per sub-game played, result) reflecting
+    # exactly what happened, including an early technical-loss ending.
     shared, private, config_sha, game_id, game_uid = _load(config_dir)
     num_games = 1 if smoke else None
     if smoke:
@@ -134,6 +126,14 @@ async def run_series_headless(
             num_games=num_games,
             machine=machine,
             opponent_url=opponent_url,
+        )
+        series = await finalize_series_agreement(
+            series,
+            opponent_url=opponent_url,
+            inbox=inbox,
+            game_uid=game_uid,
+            config_sha256=config_sha,
+            role=Role.POLICE,
         )
     finally:
         await server.stop()
