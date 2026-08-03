@@ -1,10 +1,8 @@
-"""SDK orchestration for the headless game CLIs (Batch 2, Phases 9-11).
-
-Wires config loading, this peer's own FastMCP server, the HTTP opponent
-transport, the sub-game/series runtimes, the end-of-series bilateral result
-agreement, and artifact writing into two async entrypoints. Business logic
-lives here (not in ``__main__``), per CLAUDE.md. Validated over real,
-independent, two-process HTTP runs -- see docs/PROTOCOL.md.
+"""SDK orchestration for the headless game CLIs. Wires config loading, this
+peer's own FastMCP server, the HTTP opponent transport, the sub-game/series
+runtimes, the end-of-series bilateral result agreement, and artifact writing
+into two async entrypoints. Business logic lives here, not in ``__main__``,
+per CLAUDE.md. Validated over real, independent, two-process HTTP runs.
 """
 
 from __future__ import annotations
@@ -148,6 +146,7 @@ async def run_series_headless(
         "game_id": game_id,
         "game_uid": game_uid,
         "sub_games_played": len(series.sub_games),
+        "agreed": series.agreement.agreed,
         "agreement_status": series.agreement.status,
         "police_total": series.agreement.police_total,
         "thief_total": series.agreement.thief_total,
@@ -158,12 +157,13 @@ async def run_series_headless(
 
 
 def summary_exit_code(summary: dict) -> int:
-    """0 for a clean finish, 1 for a technical loss / dispute."""
+    """0 = clean, agreed finish; 1 = technical loss / incomplete / disputed."""
     if summary.get("result") == SubGameResult.TECHNICAL_LOSS.value:
         return 1
     if summary.get("terminated_reason", "completed") != "completed":
         return 1
-    return 0
+    disputed = summary.get("agreement_status") in ("disputed_zeroed", "unverified_self_play")
+    return 1 if disputed or summary.get("agreed") is False else 0
 
 
 def print_summary(summary: dict) -> None:
