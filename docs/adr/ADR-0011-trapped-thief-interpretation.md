@@ -11,8 +11,8 @@ movement, if the book defines this as trapped" as a possible early-end condition
 alongside ordinary same-cell capture and barrier-placed-on-thief's-cell (Appendix E
 rule 46, visually confirmed against Ch.3.4's "Barrier Law" box, printed p.21).
 
-We re-checked `integration_lab/audit/visual_verification.md` and
-`integration_lab/audit/requirements_matrix.md` for an explicit "trapped = automatic
+We re-checked `_post4b_supplementary_evidence/audit/visual_verification.md` and
+`_post4b_supplementary_evidence/audit/requirements_matrix.md` for an explicit "trapped = automatic
 technical loss/capture" rule. We did not find one. What we *did* visually confirm:
 
 - Movement set is constant: N/S/E/W/STAY (Appendix F Table 15, p.137) — **STAY is
@@ -39,7 +39,7 @@ only two conditions that end a sub-game early are the two book-confirmed ones:
 - If a later, more thorough read of the book (or an opponent's differing
   interpretation during negotiation) reveals an explicit "surrounded = auto-loss"
   rule we missed, this ADR and the corresponding rules must be revisited before any
-  real league match — flagged in `integration_lab/audit/risk_register.md`.
+  real league match — flagged in `_post4b_supplementary_evidence/audit/risk_register.md`.
 - Strategy code (a later batch) may still choose to treat "all directions blocked,
   only STAY available" as a strong tactical warning signal for the thief, even though
   it is not an automatic rules-level loss.

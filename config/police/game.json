@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "_note": "DRAFT shared, agreed game terms for the AI2 final project (Edward Haddad / Donia Naser, provisional group id 'edward-donia' -- verify against the course's binding group-ID rule). Both peers (police_peer, thief_peer) must hold a byte-for-byte identical copy of this file; integration_lab/scripts/verify_shared_config.py checks this by SHA-256. Source of every value: integration_lab/audit/binding_parameters.json, itself extracted from Appendix F of assignment_materials/police_thief_p2p.pdf and visually re-verified (integration_lab/audit/visual_verification.md). This is NOT copied from reference_only/config -- it is built fresh from our own audit of the book.",
+  "_note": "Shared, agreed game terms for the AI2 final project (Edward Haddad / Donia Naser, provisional group id 'edward-donia' -- see the single group-id warning in each repo's README.md). Both peers (police_peer, thief_peer) hold a byte-for-byte identical copy of this file, verified by SHA-256 in the development workspace. Source of every value: `_post4b_supplementary_evidence/audit/binding_parameters.json` (bundled in the review ZIP), itself extracted from Appendix F of assignment_materials/police_thief_p2p.pdf and visually re-verified (`_post4b_supplementary_evidence/audit/visual_verification.md`). This is NOT copied from reference_only/config -- it is built fresh from our own audit of the book.",
   "agreed_between": ["edward-donia"],
-  "_agreed_between_note": "Placeholder for local self-play/smoke testing under our own provisional group id. Replace with ['edward-donia', '<opponent-group-id>'] once a real opponent is negotiated (see integration_lab/audit/manual_gates.md Gate B). Never invent an opponent identity.",
+  "_agreed_between_note": "Placeholder for local self-play/smoke testing under our own provisional group id. Replace with ['edward-donia', '<opponent-group-id>'] once a real opponent is negotiated (see `_post4b_supplementary_evidence/audit/manual_gates.md` Gate B). Never invent an opponent identity.",
   "board_and_agents": {
     "grid_size": 7,
     "num_agents": 2,
@@ -31,13 +31,13 @@
     "survival_thief": 10,
     "tie_score": 2,
     "technical_loss": 0,
-    "_status_note": "capture_cop/capture_thief/survival_cop/survival_thief/tie_score are constants, each a separately numbered Appendix F Table 17 row. technical_loss=0 is cross-confirmed (book's own inline example + reference config agree) but is NOT a separately numbered Appendix F row -- see integration_lab/audit/binding_parameters.json."
+    "_status_note": "capture_cop/capture_thief/survival_cop/survival_thief/tie_score are constants, each a separately numbered Appendix F Table 17 row. technical_loss=0 is cross-confirmed (book's own inline example + reference config agree) but is NOT a separately numbered Appendix F row -- see `_post4b_supplementary_evidence/audit/binding_parameters.json`."
   },
   "pheromones": {
     "pheromone_center_intensity": 0.9,
     "pheromone_decay": 0.10,
     "pheromone_grid_size": 5,
-    "_status_note": "All three constant, visually confirmed against Appendix F Table 16 and the Ch.4 scent-emission figure. Deliberately excludes 'pheromone_min_center_intensity' seen in the reference repo's config: that field is NOT a numbered Appendix F row and is not treated as mandatory here -- see integration_lab/audit/risk_register.md risk #2."
+    "_status_note": "All three constant, visually confirmed against Appendix F Table 16 and the Ch.4 scent-emission figure. Deliberately excludes 'pheromone_min_center_intensity' seen in the reference repo's config: that field is NOT a numbered Appendix F row and is not treated as mandatory here -- see `_post4b_supplementary_evidence/audit/risk_register.md` risk #2."
   },
   "network_and_league": {
     "response_timeout_sec": 30,
@@ -47,7 +47,7 @@
     "min_games_to_pass": 2,
     "max_games_per_team": 10,
     "token_budget_per_series": 200000,
-    "_status_note": "num_games=6 (constant, visually confirmed Appendix F Table 18 row 1) is the REQUIRED length of a full series against one opponent -- NOT 1. A num_games=1 single-sub-game smoke-test fixture is kept separately at integration_lab/config_fixtures/game_smoke_1.json and must never be used as the league default. diversity_reward/min_games_to_pass/max_games_per_team are constants; response_timeout_sec/watchdog_timeout_sec/token_budget_per_series are negotiable (example values used as default)."
+    "_status_note": "num_games=6 (constant, visually confirmed Appendix F Table 18 row 1) is the REQUIRED length of a full series against one opponent -- NOT 1. A separate num_games=1 single-sub-game smoke-test fixture exists only in the development workspace (not included in this package) and must never be used as the league default. diversity_reward/min_games_to_pass/max_games_per_team are constants; response_timeout_sec/watchdog_timeout_sec/token_budget_per_series are negotiable (example values used as default)."
   },
   "rate_limiter_gatekeeper": {
     "requests_per_minute": 30,

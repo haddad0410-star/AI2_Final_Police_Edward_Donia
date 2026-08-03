@@ -2,14 +2,16 @@
 
 ## Status
 
-Accepted (assessment only — not implemented this batch, since `receive_turn` itself
-is not implemented yet either; see `docs/PROTOCOL.md`).
+Accepted, and since implemented: `receive_turn` now has full lifecycle wiring, and
+`receive_move` exists as a thin alias onto the exact same handler
+(`src/police_peer/infrastructure/mcp_server.py`), matching the Decision below. See
+`docs/PROTOCOL.md`.
 
 ## Context
 
 The book's own illustrative FastMCP example (Ch.2.3.2, printed p.28, visually
 confirmed) exposes a single tool literally named `receive_move`. The reference-repo
-convention we adopted for interoperability (`integration_lab/audit/protocol_contract.md`)
+convention we adopted for interoperability (`_post4b_supplementary_evidence/audit/protocol_contract.md`)
 instead uses `receive_turn` as the general-purpose "deliver one turn's sealed record"
 tool. An opponent group that implemented the book's example literally, rather than
 studying the fuller reference convention, might call a tool named `receive_move`
@@ -31,17 +33,17 @@ exactly the "duplicate/ambiguous business logic" this batch was told to avoid.
 
 ## Decision
 
-If/when an alias is implemented (a later batch, once `receive_turn` itself exists):
-
 - `receive_move` MUST be a thin adapter that either (a) rejects any caller that omits
   fields `receive_turn` requires, with a clear `ProtocolErrorMessage`, or (b) is only
   offered for a narrower legacy handshake explicitly negotiated with an opponent who
   is known to only implement the book's minimal example — never a silent default.
 - No separate validation, state machine, or commit-reveal logic will ever be written
   for `receive_move`; it only ever calls into `receive_turn`'s implementation.
-- This batch does not implement either tool's actual handler (see Stop Condition —
-  full game loop is a later batch); this ADR exists so the decision is made
-  deliberately once that time comes, rather than improvised.
+
+As implemented, `receive_move` forwards every call directly to the same
+`TurnRouter.handle_turn` path as `receive_turn` (option (a)'s no-silent-guessing
+requirement is met by construction, since both tools accept the identical payload
+shape and neither reinterprets it) — see `mcp_server.py`.
 
 ## Consequences
 

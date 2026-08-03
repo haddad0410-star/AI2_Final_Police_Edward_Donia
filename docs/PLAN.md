@@ -1,8 +1,9 @@
 # PLAN — Police Peer
 
-Diagrams below are intentionally text-based (Mermaid) placeholders for this scaffold
-phase — no GUI/rendering exists yet to produce real screenshots, and Mermaid renders in
-most Markdown viewers (including GitHub) without extra tooling.
+Diagrams below are intentionally text-based (Mermaid), kept even after the live GUI and
+replay viewer were implemented (Batch 4A) because Mermaid renders in most Markdown
+viewers (including GitHub) without extra tooling; real screenshots of the live GUI and
+replay viewer live in `screenshots/` (see `screenshots/README.md`).
 
 ## C4 context diagram
 
@@ -114,7 +115,7 @@ sequenceDiagram
 
 ## Threat model
 
-See `docs/SECURITY.md` and `integration_lab/audit/risk_register.md`.
+See `docs/SECURITY.md` and `_post4b_supplementary_evidence/audit/risk_register.md`.
 
 ## Failure/recovery model
 
@@ -126,4 +127,4 @@ HTTP listening socket cleanly) was hardened in session recovery step B; see
 
 ## Data schemas
 
-See `integration_lab/audit/protocol_contract.md` Section 5 and `PRD_commit_reveal.md`.
+See `_post4b_supplementary_evidence/audit/protocol_contract.md` Section 5 and `PRD_commit_reveal.md`.

@@ -4,7 +4,7 @@
 # same directory -- never here. This file must contain nothing relevant to the
 # opponent beyond the one URL needed to reach them.
 #
-# DRAFT -- Phase 1-2 scaffold. No code reads this file yet.
+# Read by police_peer.shared.config_loader at startup.
 
 version = "0.1.0"
 
@@ -21,7 +21,9 @@ opponent_url = "http://127.0.0.1:8902/mcp"        # the ONLY thing I know about 
 turn_timeout_seconds = 180
 
 # [strategy] -- point at YOUR own brain class (package.module:ClassName). Private,
-# never negotiated. Batch 2 ships only the from-scratch BaselinePoliceBrain.
+# never negotiated. Defaults to the from-scratch BaselinePoliceBrain; the advanced
+# BeliefCutoffPoliceBrain (implemented, see src/police_peer/strategy/) is used
+# instead in config/police_advanced/game.toml.
 [strategy]
 police_class = "police_peer.strategy.baseline_police_brain:BaselinePoliceBrain"
 

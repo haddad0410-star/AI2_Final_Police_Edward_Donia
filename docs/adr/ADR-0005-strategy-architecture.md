@@ -10,7 +10,7 @@ The book requires the move to always be chosen by pure Python (Appendix E rule 2
 
 ## Decision
 
-A `BrainBase` contract with `_pick_move`/`_decide_move`, injected via `game.toml`'s `[strategy]` section. Two implementations per role: `BaselinePoliceBrain` (simple, original baseline) and `BeliefCutoffPoliceBrain` (candidate, see `integration_lab/audit/strategy_proposals.md`).
+A `BrainBase` contract with `_pick_move`/`_decide_move`, injected via `game.toml`'s `[strategy]` section. Two implementations per role: `BaselinePoliceBrain` (simple, original baseline) and `BeliefCutoffPoliceBrain` (advanced, see `_post4b_supplementary_evidence/audit/strategy_proposals.md`). Both are now implemented, tested, and used in real gameplay (`config/police/game.toml` vs `config/police_advanced/game.toml`).
 
 ## Consequences
 

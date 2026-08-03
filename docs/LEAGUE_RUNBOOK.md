@@ -41,6 +41,7 @@
 - **Gate B**: real opponent identity, URL, agreed config, schedule. Not
   contacted.
 - **Gate C**: Gmail OAuth consent + explicit send approval. Not run.
+- **Gate D**: NotebookLM export / manual verification. Not started.
 - **Gate E/F**: repository visibility decision, GitHub creation/push. Not
   done.
 
@@ -76,6 +77,14 @@
 - [ ] Gmail report sent (only after your explicit approval each time —
       `peer report --send`).
 
-This checklist has not been run against a real distinct opponent yet —
-only local self-play matches (`agreement_status: "unverified_self_play"`
-in every result artifact produced so far).
+This checklist has not been run against a real distinct opponent yet — only
+local self-play matches, run against this peer's own second process on
+`127.0.0.1` under the same provisional group id, not a distinct external
+opponent. The bilateral result-agreement protocol itself is real and
+verified: the latest local self-play series independently reaches
+`agreement_status: "agreed"` on both sides (matching totals, matching
+per-sub-game digest — see
+`_post4b_supplementary_evidence/post4b_finalization/FINAL_LOCAL_AUDIT.md`).
+`agreement_status: "unverified_self_play"` is what a result artifact shows
+only when no opponent response was received at all (e.g. a lone smoke test),
+not the normal outcome of a completed local series.

@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-See `integration_lab/audit/adr/ADR-0009-python-version.md` for the full investigation (installed versions, FastMCP's actual `>=3.10` requirement vs. the reference repo's non-binding `>=3.13` preference, uv support).
+See `_post4b_supplementary_evidence/audit/adr/ADR-0009-python-version.md` for the full investigation (installed versions, FastMCP's actual `>=3.10` requirement vs. the reference repo's non-binding `>=3.13` preference, uv support).
 
 ## Decision
 
