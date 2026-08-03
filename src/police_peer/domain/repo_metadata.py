@@ -17,21 +17,30 @@ from pathlib import Path
 
 def git_commit_hash(repo_root: Path) -> str:
     """The exact commit this code was built from: a real ``git rev-parse
-    HEAD`` when ``.git`` exists, else the packaged ``BUILD_COMMIT`` file."""
-    try:
-        out = subprocess.run(
-            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            check=True,
-        )
-        return out.stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        build_commit = repo_root / "BUILD_COMMIT"
-        if build_commit.exists():
-            return build_commit.read_text(encoding="utf-8").strip()
-        return "unavailable: no .git and no BUILD_COMMIT file"
+    HEAD`` when ``.git`` exists, else the packaged ``BUILD_COMMIT`` file.
+
+    Checks for ``.git`` first rather than always spawning ``git`` and
+    catching its failure -- a clean-extracted review ZIP has no ``.git``,
+    and skipping the doomed-to-fail subprocess spawn (which still walks
+    every parent directory looking for one) avoids a real, measurable
+    blocking-call cost on the hot declaration-building path.
+    """
+    if (repo_root / ".git").exists():
+        try:
+            out = subprocess.run(
+                ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=True,
+            )
+            return out.stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            pass
+    build_commit = repo_root / "BUILD_COMMIT"
+    if build_commit.exists():
+        return build_commit.read_text(encoding="utf-8").strip()
+    return "unavailable: no .git and no BUILD_COMMIT file"
 
 
 def code_version(pyproject_path: Path) -> str:
