@@ -1,9 +1,8 @@
 """Cardinal-region <-> board-cell mapping for hint encode/decode (Batch 3.5
 Task 5). The hint TEXT is the one field allowed to lie; a region word is
 never a coordinate, only a cardinal cell-set the receiver can weigh as
-uncertain evidence -- see
-integration_lab/evidence/batch3_5/observation_pipeline_audit.md defects
-C1/D1/D3.
+uncertain evidence -- see `observation_pipeline_audit.md` defects C1/D1/D3
+(development-workspace evidence, not included in this standalone package).
 """
 
 from __future__ import annotations

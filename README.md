@@ -153,20 +153,32 @@ replay-verified (raw capture produced during development in the full project
 workspace; not included in this single-repo package). Manual
 screenshot instructions: `screenshots/README.md`.
 
-## Graphical replay viewer (Batch 4A)
+## Graphical replay viewer (Batch 4A, superseded by Batch 4B bilateral verification)
 
 `uv run python -m police_peer replay --gui --police-artifacts <dir> --thief-artifacts <dir>`
 shows both true trajectories (permitted only here, from finalized audited
 artifacts, never live memory), barriers, hints, scores, and a VERIFIED/TAMPERED
-banner. It reuses the existing, unmodified `services/replay_verifier.py` for
-this peer's own artifacts — a real cross-schema incompatibility was found and
-fixed while building this: this repo's own verifier cannot correctly recompute
-the opponent's differently-shaped commitment hashes, so the opponent's side is
-loaded for display only, honestly labeled `NOT_INDEPENDENTLY_VERIFIED_FROM_THIS_SIDE`,
-never a fabricated verdict. A real TAMPERED demonstration (a copy of real
-evidence, one field edited) was preserved during development in the full
-project workspace (not included in this single-repo package); the original
-evidence was never touched.
+banner. Both repos' sealed field set is unified under a versioned
+`commitment/1` schema (`domain/crypto/payload.py`): this repo's own
+`services/replay_verifier.py` now correctly recomputes and independently
+verifies the Thief side's `commitment/1` record too, not just its own — the
+banner reads `VERIFIED — BOTH PEERS INDEPENDENTLY VERIFIED` when both sides
+check out, and `TAMPERED` the moment either side's recomputed hash disagrees
+with its sealed commitment. A real TAMPERED demonstration (a copy of the
+current bundled bilateral evidence, one documented field edited) is bundled
+at `_post4b_supplementary_evidence/batch4b/bilateral_series/tampered_copy/`;
+the original evidence was never touched.
+
+**Batch 4A history (superseded):** earlier, this repo's own verifier could not
+correctly recompute the opponent's differently-shaped commitment hashes, so
+the opponent's side was loaded for display only, honestly labeled
+`NOT_INDEPENDENTLY_VERIFIED_FROM_THIS_SIDE` rather than a fabricated verdict.
+That schema incompatibility was a real, mechanical divergence (`sealed-turn/2`
+vs this repo's `commit-reveal/2`), fixed in Batch 4B by unifying both repos on
+`commitment/1` — see `docs/LIMITATIONS.md`. The label now only applies to
+genuinely pre-Batch-4B legacy records under
+`_post4b_supplementary_evidence/audit/`, preserved unmodified and still
+self-verifiable under their own original schema, never to a current record.
 
 ## Gmail reporter (Batch 4A, dry-run only)
 

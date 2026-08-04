@@ -1,6 +1,8 @@
 """Coverage for sdk.negotiation_runner.run_negotiation_smoke, exercised
-directly (not via a real OS subprocess -- that's what
-integration_lab/run_negotiation_smoke.py is for) so pytest can measure it."""
+directly (not via a real OS subprocess -- that's what the development
+workspace's `run_negotiation_smoke.py` driver script is for, a
+development-workspace artifact not included in this standalone package)
+so pytest can measure it."""
 
 from __future__ import annotations
 

@@ -10,7 +10,8 @@ verified) maps to a concrete rule here:
 
 `num_games` is deliberately NOT enforced as a hard constant here even though
 Appendix F Table 18 lists it as constant=6: a local single-sub-game smoke-test
-fixture (integration_lab/config_fixtures/game_smoke_1.json) legitimately uses
+fixture (`config_fixtures/game_smoke_1.json`, development-workspace fixture,
+not included in this standalone package) legitimately uses
 num_games=1 and must still load successfully. League-readiness (num_games==6)
 is checked separately by `is_league_series_ready`, not by this loader.
 """

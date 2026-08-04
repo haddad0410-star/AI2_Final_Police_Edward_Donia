@@ -154,6 +154,24 @@ underlying game) is at `_post4b_supplementary_evidence/batch4b/bilateral_series/
 (current, bilateral-schema series: commands, PIDs, stdout/stderr, exit
 codes, both sides' replay-verify output, bilateral cross-verification
 checks). The preserved legacy-schema evidence from Batch 4A
-(`integration_lab/evidence/batch4a/gui_demo/`) was produced during
-development in the full project workspace and is not included in this
-single-repo package.
+(development-workspace artifact, not included in this standalone package)
+was produced during development in the full project workspace.
+
+## Config-hash provenance (disclosed, not hidden)
+
+These 18 PNGs are genuine, immutable manual captures, never edited or
+regenerated. Any screenshot showing a `config_sha256_prefix` displays
+`5336607e...`, matching `game.json` as it existed at capture time. Since
+then, `game.json`'s underscore-prefixed explanatory-metadata fields
+(`_note`, `_agreed_between_note`, nested `_status_note`) were cleaned up —
+no board, movement, scoring, barrier, scent, league, or rate-limit
+parameter changed; stripping every underscore-prefixed key from both
+versions and comparing what remains yields byte-identical gameplay values.
+That metadata-only edit changed the SHA-256 from
+`5336607ef7f6cd786830b3a0640d4e2defbf1a96724fec498498017ca935c541` to the
+current `40d728e9ff1c0cfe25f4b7bfe814fef317576b5b0c1404106447dc0eaf39e9a5`,
+which is what every current, authoritative bilateral artifact
+(`_post4b_supplementary_evidence/batch4b/`) uses. These screenshots
+demonstrate real GUI/replay behavior, not the final config-file byte hash,
+and were not regenerated for a change that alters no gameplay parameter.
+Full detail: `_post4b_supplementary_evidence/post4b_finalization/screenshot_audit.md`.

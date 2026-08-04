@@ -3,7 +3,8 @@
 Ties together: config loading, starting this peer's own FastMCP server, and
 calling the opponent's server as a client -- exactly the subset needed for
 health/negotiate/config-hash-compare/ack/clean-shutdown. The full game loop
-(turn commit/reveal, audit) is a later batch.
+(turn commit/reveal, audit) is implemented separately in `sdk/game_runner.py`,
+not by this module.
 """
 
 from __future__ import annotations

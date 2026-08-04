@@ -34,20 +34,26 @@ Every message category (health, declaration, config proposal, negotiation ack, t
 commitment, turn reveal, public turn envelope, hint, scent payload, barrier
 declaration, capture claim/response, audit submission, control, protocol error) has
 strict `__post_init__` validation and negative tests — 23 tests in
-`tests/protocol/test_protocol_schemas.py`. This validates message *shape*; it does not
-yet implement the commit-reveal *lifecycle* (see below).
+`tests/protocol/test_protocol_schemas.py`. This validates message *shape*; the
+commit-reveal *lifecycle* itself is implemented and tested separately (see below).
 
-## Planned security test categories (`tests/security/`) — later batch
+## Security test categories (`tests/security/`) — implemented
 
 - Tamper injection: alter move, hint, verdict, nonce, step, config, capture answer,
-  record order — each must be detected by the audit.
-- Nonce reuse rejection.
-- Constant-time comparison on reveal verification (no timing side-channel).
-- False capture-claim / false win-claim detection.
+  record order — each is detected by the audit
+  (`tests/security/test_commit_reveal.py`, `tests/security/test_replay_verifier.py`).
+- Nonce reuse rejection (`test_nonce_reuse_detected_by_audit`).
+- Constant-time comparison on reveal verification, no timing side-channel
+  (`test_constant_time_compare_is_actually_used`).
+- False capture-claim / false win-claim detection (covered across
+  `tests/protocol/test_protocol_schemas.py`, `tests/unit/test_turn_router.py`, and
+  `tests/unit/test_artifacts.py`, in addition to the commit-reveal audit tests above).
 
-None of these lifecycle tests exist yet — commit-reveal is schema-only this batch
-(`src/police_peer/protocol/messages_turn.py`, `messages_capture.py`); the full sealing/
-audit implementation is a later batch. This document will be updated again then.
+Commit-reveal is fully implemented, not schema-only — sealing, acknowledgment,
+reveal, and audit recomputation all run in real gameplay
+(`src/police_peer/protocol/messages_turn.py`, `messages_capture.py`,
+`domain/crypto/`), unified under the `commitment/1` schema (see the Batch 4B
+section below).
 
 ## Session recovery step B additions
 

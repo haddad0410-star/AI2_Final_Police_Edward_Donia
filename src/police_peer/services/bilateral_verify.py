@@ -9,7 +9,7 @@ Reuses the REAL, existing, unmodified replay-verification engine
 sides' records use the current ``commitment/1`` canonical schema (Batch 4B
 Task 3 unified the sealed field set so this repo's own crypto module can
 correctly recompute the opponent's commitments too -- see
-``integration_lab/evidence/batch4b/commitment_schema_audit.md``). Never
+``_post4b_supplementary_evidence/batch4b/commitment_schema_audit.md``). Never
 imports ``thief_peer``; only calls this repo's own verifier on whichever
 directory it's given.
 

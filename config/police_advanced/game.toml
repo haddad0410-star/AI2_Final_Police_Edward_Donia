@@ -9,7 +9,7 @@
 # config/police never places a barrier -- see strategy/baseline_police_brain.py
 # -- so it cannot produce a barrier-placement screenshot). Same police_class +
 # profile + seed combination already verified to place barriers in
-# integration_lab/evidence/batch4b/bilateral_series/police_config/game.toml
+# _post4b_supplementary_evidence/batch4b/bilateral_series/police_config/game.toml
 # (barrier_count=8 in all 6 sub-games, both_terminated_explicitly=true,
 # no technical loss). Ports match the standard GUI README (8901/8902).
 

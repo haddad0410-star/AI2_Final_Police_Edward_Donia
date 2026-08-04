@@ -1,9 +1,10 @@
 """Handshake-phase messages: health/status, declaration, config proposal, ack.
 
-This batch defines and validates these schemas only -- the full negotiation
-lifecycle (actually exchanging and acting on them over HTTP) is wired up by
-infrastructure/mcp_server.py's minimal vertical slice in this same batch, but
-the end-to-end commit/reveal/audit lifecycle is a later batch.
+These schemas are validated and the full negotiation lifecycle (actually
+exchanging and acting on them over HTTP) is wired up by
+infrastructure/mcp_server.py; the end-to-end commit/reveal/audit lifecycle
+(see messages_turn.py, messages_capture.py) is likewise implemented and used
+in real gameplay.
 """
 
 from __future__ import annotations

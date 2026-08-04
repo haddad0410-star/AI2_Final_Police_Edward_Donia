@@ -2,9 +2,10 @@
 
 Canonical schema frozen in session recovery step C (declaration/2,
 docs/schemas/declaration.schema.json, resolving risk #14). Cross-repository
-byte-identical-fixture and schema-SHA-256 comparisons live in
-integration_lab/scripts/compare_declaration_schemas.py, not here (a single
-repo's tests cannot import the sibling repo).
+byte-identical-fixture and schema-SHA-256 comparisons live in the
+development workspace's `compare_declaration_schemas.py` script
+(development-workspace artifact, not included in this standalone package),
+not here (a single repo's tests cannot import the sibling repo).
 """
 
 from __future__ import annotations

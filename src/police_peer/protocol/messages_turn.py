@@ -1,5 +1,7 @@
-"""Turn commit/reveal message shapes (schemas only -- see module docstring in
-messages_handshake.py: the full lifecycle is wired up in a later batch)."""
+"""Turn commit/reveal message shapes -- the full commit/ack/reveal/audit
+lifecycle these schemas describe is implemented and used in real gameplay
+(see `infrastructure/mcp_server.py`'s `receive_turn`/`submit_audit` tools and
+`docs/SECURITY.md`)."""
 
 from __future__ import annotations
 

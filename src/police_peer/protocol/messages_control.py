@@ -1,4 +1,5 @@
-"""Out-of-band control channel and structured protocol errors (schema only)."""
+"""Out-of-band control channel and structured protocol errors -- implemented
+and wired to the `receive_control` server tool, not schema-only."""
 
 from __future__ import annotations
 

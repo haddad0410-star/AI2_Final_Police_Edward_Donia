@@ -7,8 +7,9 @@ matching reveal arrives before a bounded number of polls, a
 :class:`TechnicalFailure` is returned rather than hanging.
 
 Validated against a live second peer (the independently-built Thief repo) in
-session recovery step C, Task 5 -- see
-integration_lab/evidence/session_recovery_step_c/one_subgame/.
+session recovery step C, Task 5, and repeatedly since across real
+six-sub-game bilateral series -- see `session_recovery_step_c/one_subgame/`
+(development-workspace evidence, not included in this standalone package).
 """
 
 from __future__ import annotations
@@ -136,9 +137,9 @@ class HttpOpponentTransport:
         their own reveal record (Batch 3.5 Task 4 -- previously this method
         scanned for a standalone ``"scent"`` message type that no sender ever
         produced, so it always fell back to an all-zero grid regardless of
-        the opponent's real emission; see
-        integration_lab/evidence/batch3_5/observation_pipeline_audit.md
-        defect B1). Returns ``None`` (explicit missing evidence) or whatever
+        the opponent's real emission; see `observation_pipeline_audit.md`
+        defect B1, development-workspace evidence, not included in this
+        standalone package). Returns ``None`` (explicit missing evidence) or whatever
         raw structure was received, unvalidated -- validation happens
         downstream in ``ingest_opponent_reveal`` so malformed data is
         rejected rather than silently coerced into a false-valid zero grid."""

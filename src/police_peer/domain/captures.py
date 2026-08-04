@@ -22,7 +22,8 @@ class CaptureResponse:
     """Thief's mandatory, honest reply to a CaptureClaim.
 
     `caught` must truthfully state whether the claim was correct; a false
-    answer is cryptographically detectable at the final audit (later batch)
+    answer is cryptographically detectable at the final audit (implemented;
+    see `domain/crypto/audit.py`, `tests/security/test_commit_reveal.py`)
     and is a disqualifying protocol violation, not merely a strategic option.
     """
 

@@ -4,14 +4,14 @@ Batch 4B Task 3: the sealed field set is now ``commitment/1`` -- a single,
 role-agnostic canonical shape both this repo and the independently-built
 Thief repo adopt for newly-sealed records, resolving the two mechanical
 divergences documented in
-``integration_lab/evidence/batch4b/commitment_schema_audit.md`` (the
+``_post4b_supplementary_evidence/batch4b/commitment_schema_audit.md`` (the
 ``state`` field's shape -- dict here vs an opaque string in Thief -- and
 ``config_sha256``'s placement -- nested inside ``state`` here vs a
 top-level field in Thief). Both are fixed by replacing ``state`` with a
 plain ``position`` tuple and promoting ``config_sha256`` to a real
 top-level field, matching Thief's (already cleaner) convention. See
-``integration_lab/evidence/batch4b/canonical_commitment_design.md`` for
-the full design rationale.
+``canonical_commitment_design.md`` for the full design rationale
+(development-workspace evidence, not included in this standalone package).
 
 Legacy note: records sealed under the prior ``commit-reveal/2`` schema
 (Batch 1-4A evidence) are UNCHANGED on disk and remain self-verifiable by

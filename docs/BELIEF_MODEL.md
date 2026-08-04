@@ -26,8 +26,8 @@ turns through this exact production code show scent alone produces a
 uniquely-peaked reading on 100% of turns, but that peak matches the
 opponent's true position only 30.5% of the time, and belief entropy barely
 drops (5.61 -> 5.36 bits) — a confident-looking maximum-likelihood signal,
-not an exact-position leak. See
-`integration_lab/evidence/batch3_6/epistemic_leakage_audit.md`.
+not an exact-position leak. See `epistemic_leakage_audit.md`
+(development-workspace evidence, not included in this standalone package).
 
 ## Pipeline (frozen, actually wired into the peer runtime as of Batch 3.5 Task 6)
 
@@ -36,8 +36,8 @@ turn at the top of `services/turn_loop.py::_decide_turn`, before the
 strategy brain is invoked. This section supersedes the pre-Batch-3.5
 description of this file (which described a hypothetical future order,
 written before the wire pipeline that actually delivers scent/hint evidence
-existed at all — see
-`integration_lab/evidence/batch3_5/observation_pipeline_audit.md`).
+existed at all — see `observation_pipeline_audit.md`
+(development-workspace evidence, not included in this standalone package).
 
 1. **Prior** — `state.belief`, carried over from the previous turn (a fresh
    `uniform_prior(grid_size, barriers)` at sub-game start).
@@ -100,7 +100,8 @@ sub-game starts with a fresh uniform belief, `hint_trust=0.5`, and
   uncertainty on an N×N board). Verified at both extremes by test.
 - `most_likely(belief)` / `top_k(belief, k)` — argmax / ranked list of likely cells.
 - `expected_distance(belief, from_position, distance_fn)` — E[distance] under the
-  belief, for strategy use in a later batch.
+  belief; used by `BeliefCutoffPoliceBrain`'s utility function
+  (`strategy/belief_cutoff_utility.py`) to score candidate moves.
 
 ## Degenerate input handling
 
@@ -111,6 +112,7 @@ never returns an invalid (non-normalized) distribution.
 
 ## Evidence
 
-`integration_lab/evidence/belief_reference_run.json` — real computed output from this
+`belief_reference_run.json` — real computed output from this
 implementation (uniform prior, transition, scent update, hint update, entropy values),
-not fabricated.
+not fabricated (development-workspace evidence, not included in this standalone
+package).

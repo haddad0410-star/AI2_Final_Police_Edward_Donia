@@ -13,8 +13,8 @@ Define the live GUI and post-game replay viewer.
 ## Acceptance criteria (measurable)
 
 - [x] A GUI-model unit test (headless) proves the opponent's true position is never present in any rendered state object — `tests/unit/test_gui_no_opponent_leak.py` (reflection-based scanner over every dataclass in `services/gui_events.py` and `gui/view_model.py`).
-- [x] Replay of an untampered log reports VERIFIED — `tests/unit/test_replay_view_model.py::test_valid_six_sub_game_like_set_verified`, real demonstration in `integration_lab/evidence/batch4a/gui_demo/`.
-- [x] Replay of a deliberately tampered log reports TAMPERED — `tests/unit/test_replay_view_model.py::test_tampered_artifacts_are_refused` (report-refusal path) and the real copied-and-tampered demonstration in `integration_lab/evidence/batch4a/replay_demo/` (`tampered_demo_output.txt`).
+- [x] Replay of an untampered log reports VERIFIED — `tests/unit/test_replay_view_model.py::test_valid_six_sub_game_like_set_verified`, real demonstration recorded during development in `batch4a/gui_demo/` (development-workspace artifact, not included in this standalone package).
+- [x] Replay of a deliberately tampered log reports TAMPERED — `tests/unit/test_replay_view_model.py::test_tampered_artifacts_are_refused` (report-refusal path) and the real copied-and-tampered demonstration recorded during development in `batch4a/replay_demo/` (`tampered_demo_output.txt`; development-workspace artifact, not included in this standalone package).
 
 ## Implementation notes (Batch 4A)
 
@@ -33,4 +33,4 @@ Define the live GUI and post-game replay viewer.
 
 Public deployment / screenshots (manual, see `screenshots/README.md`, not fabricated).
 
-Status: implemented and tested (Batch 4A). See `integration_lab/audit/PROGRESS.md`.
+Status: implemented and tested (Batch 4A). See `_post4b_supplementary_evidence/audit/PROGRESS.md`.

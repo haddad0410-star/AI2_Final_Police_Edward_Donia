@@ -3,8 +3,8 @@
 A malformed grid (wrong shape, non-numeric, non-finite, negative, or
 exceeding the physically-reachable steady-state maximum for the binding
 emission/decay model) must never be silently treated as valid evidence --
-see integration_lab/evidence/batch3_5/observation_pipeline_audit.md
-(defect A1) and pipeline_before_after.md.
+see `observation_pipeline_audit.md` (defect A1) and `pipeline_before_after.md`
+(development-workspace evidence, not included in this standalone package).
 """
 
 from __future__ import annotations

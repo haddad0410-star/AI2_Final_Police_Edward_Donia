@@ -26,7 +26,7 @@ def payload_from_step(step: dict) -> SealedTurnPayload:
 
     Handles both the current ``commitment/1`` shape (a top-level
     ``position``/``config_sha256``, bilaterally verifiable -- see
-    ``integration_lab/evidence/batch4b/commitment_schema_audit.md``) and
+    ``_post4b_supplementary_evidence/batch4b/commitment_schema_audit.md``) and
     the legacy ``commit-reveal/2`` shape (Batch 1-4A evidence, where
     ``config_sha256`` was nested inside ``state``) so old evidence remains
     self-verifiable under its own original schema. A record is only ever

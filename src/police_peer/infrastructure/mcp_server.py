@@ -2,7 +2,7 @@
 
 Batch 1 tools (``health``, ``negotiate``, ``propose_config``) are kept as-is.
 Batch 2 (Phase 6) adds the game-phase tool surface from
-``integration_lab/audit/protocol_contract.md`` section 2: one discriminated,
+``_post4b_supplementary_evidence/audit/protocol_contract.md`` section 2: one discriminated,
 versioned ``receive_turn`` (plus a ``receive_move`` alias onto the exact same
 validation path), ``submit_audit``, and ``receive_control``. Handlers only
 validate + enqueue + ack; the turn is processed later by the local runtime.

@@ -4,8 +4,8 @@ post-repair levels (not indiscriminate placement -- a controlled scenario).
 
 Cross-process wire transport / persistence / replay-verification / tamper
 detection for a barrier are proven over REAL FastMCP HTTP in Task 9's
-barrier-trap sanity fixture (integration_lab/evidence/batch3_5/capture_sanity_results.json)
-rather than duplicated here.
+barrier-trap sanity fixture (`capture_sanity_results.json`, development-workspace
+evidence, not included in this standalone package) rather than duplicated here.
 """
 
 from __future__ import annotations

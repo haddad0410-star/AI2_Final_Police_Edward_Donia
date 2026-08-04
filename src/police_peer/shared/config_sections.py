@@ -1,6 +1,6 @@
 """Immutable dataclasses for each section of the shared game.json constitution.
 
-Field names mirror integration_lab/audit/binding_parameters.json exactly, one
+Field names mirror _post4b_supplementary_evidence/audit/binding_parameters.json exactly, one
 dataclass per Appendix F table. No validation logic lives here; see
 config_validation.py for the rules each section must satisfy.
 """

@@ -1,4 +1,5 @@
-"""Capture-claim exchange and end-of-series audit submission (schema only)."""
+"""Capture-claim exchange and end-of-series audit submission -- implemented
+and used in real gameplay, not schema-only."""
 
 from __future__ import annotations
 
@@ -33,8 +34,9 @@ class CaptureResponseMessage:
 
 @dataclass(frozen=True, slots=True)
 class AuditSubmissionMessage:
-    """End-of-series reveal: sealed records + nonces (format finalized when
-    the full commit-reveal lifecycle is implemented in a later batch)."""
+    """End-of-series reveal: sealed records + nonces, recomputed and
+    verified by the full commit-reveal audit lifecycle (implemented; see
+    `domain/crypto/audit.py`)."""
 
     envelope: MessageEnvelope
     records: tuple[dict, ...]

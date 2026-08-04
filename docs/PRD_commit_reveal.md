@@ -13,12 +13,15 @@ Define the cryptographic sealing and mutual audit protocol.
 
 ## Acceptance criteria (measurable)
 
-- [ ] Security tests deliberately alter move/hint/verdict/nonce/step/config/capture-answer/record-order — every alteration is detected.
-- [ ] No nonce is ever reused across steps.
-- [ ] Constant-time comparison verified (no early-exit branching on mismatch position).
+- [x] Security tests deliberately alter move/hint/verdict/nonce/step/config/capture-answer/record-order — every alteration is detected (`tests/security/test_commit_reveal.py`, `tests/security/test_replay_verifier.py`).
+- [x] No nonce is ever reused across steps — `tests/security/test_commit_reveal.py::test_fresh_nonce_per_record`, `::test_nonce_reuse_detected_by_audit`.
+- [x] Constant-time comparison verified (no early-exit branching on mismatch position) — `tests/security/test_commit_reveal.py::test_constant_time_compare_is_actually_used`.
 
 ## Out of scope (for now)
 
 GUI/replay display of audit results (see PRD_gui_replay.md).
 
-Status: design only, not implemented. See `integration_lab/audit/PROGRESS.md`.
+Status: implemented and tested. Commit-reveal sealing is unified under the
+`commitment/1` schema (`domain/crypto/payload.py`) and used in real gameplay,
+including full bilateral (cross-repo) verification. See
+`_post4b_supplementary_evidence/audit/PROGRESS.md`.

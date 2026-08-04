@@ -5,8 +5,9 @@ Reuses the already-implemented, already-tested model/save layer
 (``artifact_models.py``, ``artifact_builders.py``, ``artifacts.py``) --
 this module is purely the orchestration that was missing from the actual
 ``run-series`` execution path (found during the session-recovery-step-B
-Phase 10-12 audit; see ``integration_lab/evidence/session_recovery_step_b/
-police_phase_10_12/``): the artifact writer existed and was unit-tested in
+Phase 10-12 audit; see ``session_recovery_step_b/police_phase_10_12/``,
+development-workspace evidence, not included in this standalone package):
+the artifact writer existed and was unit-tested in
 isolation, but nothing ever called it from ``game_runner.py``/the CLI, so a
 real series run produced no artifact files on disk.
 """

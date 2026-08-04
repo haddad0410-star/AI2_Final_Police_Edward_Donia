@@ -2,8 +2,10 @@
 
 Per the book (Ch.5.3.1): the hint text may lie, but the sender must honestly
 declare whether it is lying via `intent` -- the declaration itself must always
-be truthful (Appendix E rule 22: false intent declaration is disqualifying,
-enforced at the protocol/audit layer in a later batch, not here).
+be truthful (Appendix E rule 22: false intent declaration is disqualifying;
+`intent` is a sealed commit-reveal field, so any post-hoc tampering is
+detected by the final audit, implemented in `domain/crypto/audit.py`, not
+here).
 """
 
 from __future__ import annotations

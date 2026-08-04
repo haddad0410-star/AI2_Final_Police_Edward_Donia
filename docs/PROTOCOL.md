@@ -6,13 +6,12 @@ summarizes only what's specific to running this repo as the Police side.
 - This peer's default local port: `8901` (private, set in `config/police/game.toml`, not negotiated).
 - Opponent URL: supplied via this peer's own `game.toml` / `.env` (`OPPONENT_MCP_URL`) —
   the only network detail this peer is given about the opponent.
-- Tool surface exposed by this peer's FastMCP server: `negotiate`, `receive_turn`,
-  `submit_audit`, `receive_control` (see canonical doc for exact schemas). **Batch 1
-  implements only `health`, `negotiate`, and `propose_config`** (real HTTP, see
-  `src/police_peer/infrastructure/mcp_server.py`) — `receive_turn`/`submit_audit`/
-  `receive_control` are schemas only (`src/police_peer/protocol/`), not yet wired to
-  server tools; that is a later batch. See `docs/adr/ADR-0012-receive-move-alias-
-  assessment.md` for the `receive_move` alias decision.
+- Tool surface exposed by this peer's FastMCP server: `health`, `negotiate`,
+  `propose_config`, `receive_turn` (plus a `receive_move` compatibility alias),
+  `submit_audit`, `receive_control` — all real FastMCP HTTP tools, all wired
+  and used in real gameplay (`src/police_peer/infrastructure/mcp_server.py`).
+  See `docs/adr/ADR-0012-receive-move-alias-assessment.md` for the
+  `receive_move` alias decision.
 - Police-specific wire fields: `capture_claim` (this side sends it), `barrier_placed` (this side sends it, publicly and truthfully).
 - Four JSON artifacts this peer writes each series: `declaration_<game_id>.json`,
   `config_<game_id>_g<NN>.json` (x6), `log_<game_id>_g<NN>.json` (x6),
@@ -27,15 +26,15 @@ summarizes only what's specific to running this repo as the Police side.
   `docs/schemas/declaration.schema.json`, `protocol_contract.md` §3.4a, and
   `risk_register.md` risk #14, now resolved).
 - Real two-process negotiation evidence (actual stdout/stderr/exit codes
-  from two independently-launched OS processes) was produced during
-  development in the full project workspace and is not included in this
-  single-repo package.
-  A real two-process full game/series has NOT been run yet (explicitly out
-  of scope through session recovery step B).
+  from two independently-launched OS processes), and since then several
+  real two-process six-sub-game HTTP series (advanced vs advanced, both
+  replay verifiers reporting `VERIFIED`/`FULL_BILATERAL_VERIFICATION=true`),
+  were produced during development in the full project workspace and are
+  not included in this single-repo package.
 
-**Note (this section describes Batch-1-era scope; the peer has since grown
-`receive_turn`/`submit_audit` and real multi-process series validation —
-see `_post4b_supplementary_evidence/audit/PROGRESS.md` for current status.)**
+**Note:** this section has been updated past its original Batch-1-era scope;
+see `_post4b_supplementary_evidence/audit/PROGRESS.md` for the current
+readiness record.
 
 **Scent field-name correction (Batch 3.6 Task 2):** `protocol_contract.md`
 §3.2's `scent_grid` field name is this project's own paraphrase of the

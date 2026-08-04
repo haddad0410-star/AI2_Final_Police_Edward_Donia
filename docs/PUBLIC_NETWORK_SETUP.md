@@ -44,9 +44,9 @@ If a `PUBLIC_BIND_TOKEN` is ever suspected leaked:
 
 A raw public HTTP endpoint is never acceptable — public exposure requires
 a tunnel or deployment that terminates HTTPS.
-`integration_lab/scripts/check_public_endpoint.py <url>` validates the
-URL FORM (scheme, hostname, path) before you ever go live — it never
-opens a socket or contacts the URL.
+`check_public_endpoint.py <url>` (development-workspace script, not included
+in this standalone package) validates the URL FORM (scheme, hostname, path)
+before you ever go live — it never opens a socket or contacts the URL.
 
 ## What is NOT done yet (deliberately, pending your approval)
 
@@ -60,13 +60,16 @@ opens a socket or contacts the URL.
 
 ## Pre-flight checklist (run before ever requesting Gate A approval)
 
-- [ ] `integration_lab/scripts/check_public_endpoint.py <intended-url>` passes.
-- [ ] `integration_lab/scripts/check_peer_auth.py` passes.
-- [ ] `integration_lab/scripts/check_port_release.py` shows no orphans.
+- [ ] `check_public_endpoint.py <intended-url>` passes (development-workspace
+      script, not included in this standalone package).
+- [ ] `check_peer_auth.py` passes (development-workspace script, not included
+      in this standalone package).
+- [ ] `check_port_release.py` shows no orphans (development-workspace script,
+      not included in this standalone package).
 - [ ] Reviewed which code change would be needed to loosen
       `_ALLOWED_LOCAL_HOSTS` and how the bearer token would be enforced
       on every incoming request.
 - [ ] Your explicit written approval for Gate A.
 
 Readiness remains `LOCAL_READY`. This document does not raise readiness by
-itself — see `integration_lab/audit/PROGRESS.md`.
+itself — see `_post4b_supplementary_evidence/audit/PROGRESS.md`.

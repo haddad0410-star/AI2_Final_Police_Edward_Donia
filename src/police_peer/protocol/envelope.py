@@ -1,6 +1,6 @@
 """MessageEnvelope: the common metadata every protocol message carries.
 
-Compatible with integration_lab/audit/protocol_contract.md. Every message in
+Compatible with _post4b_supplementary_evidence/audit/protocol_contract.md. Every message in
 this package embeds one of these rather than repeating the fields, so
 validation lives in exactly one place.
 """
