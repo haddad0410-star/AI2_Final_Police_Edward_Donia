@@ -59,13 +59,14 @@ async def run_series(
     machine: PeerStateMachine | None = None,
     rng: random.Random | None = None,
     opponent_url: str | None = None,
+    opponent_token: str | None = None,
 ) -> SeriesResult:
     """Run a full series and return its aggregated, mutually-audited result."""
     games = num_games if num_games is not None else shared.network_and_league.num_games
     machine = machine if machine is not None else PeerStateMachine()
     rng = rng if rng is not None else random.Random(private.play.seed)
     advance_to_signed(machine)
-    await await_opponent_ready(opponent_url)
+    await await_opponent_ready(opponent_url, opponent_token)
     records: list[SubGameRecord] = []
     sealed_by_game: list[tuple] = []
     reason = "completed"

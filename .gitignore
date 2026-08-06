@@ -6,6 +6,15 @@ client_secret*.json
 *.pem
 *.key
 
+# Gate A1: tunnel-tool config/credential files — cloudflared/ngrok both
+# default to storing these outside any repo, but never trust that by
+# omission. PUBLIC_BIND_TOKEN/OPPONENT_MCP_TOKEN themselves are env-var
+# only (never written to a file in this repo), so no separate pattern is
+# needed for them beyond the .env rule above.
+.cloudflared/
+ngrok.yml
+.ngrok2/
+
 # Python
 __pycache__/
 *.pyc

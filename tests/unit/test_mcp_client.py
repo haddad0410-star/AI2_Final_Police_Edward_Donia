@@ -35,7 +35,7 @@ class _FakeConnectCM:
 
 
 def _client_factory(exc: Exception):
-    def _factory(url: str, timeout: float | None = None):
+    def _factory(url: str, timeout: float | None = None, auth=None):
         return _FakeConnectCM(exc)
 
     return _factory
@@ -71,7 +71,7 @@ def test_wait_for_health_recovers_once_the_timeout_stops(monkeypatch) -> None:
     calls = {"n": 0}
 
     class _EventualClient:
-        def __init__(self, url, timeout=None):
+        def __init__(self, url, timeout=None, auth=None):
             calls["n"] += 1
 
         async def __aenter__(self):
@@ -99,7 +99,7 @@ def test_genuinely_unreachable_peer_still_bounded(monkeypatch) -> None:
     still hit the SAME bounded retry policy, unchanged by this fix."""
 
     class _RefusingClient:
-        def __init__(self, url, timeout=None):
+        def __init__(self, url, timeout=None, auth=None):
             pass
 
         async def __aenter__(self):
@@ -118,7 +118,7 @@ def test_successful_health_call_unaffected(monkeypatch) -> None:
     the new McpError branch."""
 
     class _OkClient:
-        def __init__(self, url, timeout=None):
+        def __init__(self, url, timeout=None, auth=None):
             pass
 
         async def __aenter__(self):

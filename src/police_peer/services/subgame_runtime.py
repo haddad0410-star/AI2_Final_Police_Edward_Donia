@@ -54,15 +54,18 @@ def advance_to_signed(machine: PeerStateMachine) -> None:
         machine.require(TransitionEvent.of(kind))
 
 
-async def await_opponent_ready(opponent_url: str | None) -> None:
+async def await_opponent_ready(opponent_url: str | None, opponent_token: str | None = None) -> None:
     """Bounded wait for the opponent's health, called only AFTER our own
     machine has already left INITIALIZING (above), so we stay receptive to
     their first message the whole time we wait for them; a genuine no-show
-    still fails honestly at the first real ``exchange_turn`` call, unchanged."""
+    still fails honestly at the first real ``exchange_turn`` call, unchanged.
+    ``opponent_token`` (Gate A1) is required when the opponent runs
+    ``--public`` -- without it every poll is rejected with a real 401, not a
+    transient connectivity failure, and would never be retried away."""
     if opponent_url is None:
         return
     with contextlib.suppress(PeerUnavailableError):
-        await wait_for_health(opponent_url, attempts=100, delay_seconds=0.3)
+        await wait_for_health(opponent_url, attempts=100, delay_seconds=0.3, token=opponent_token)
 
 
 async def run_single_subgame(
@@ -76,11 +79,12 @@ async def run_single_subgame(
     machine: PeerStateMachine | None = None,
     rng: random.Random | None = None,
     opponent_url: str | None = None,
+    opponent_token: str | None = None,
 ) -> SubGameRunResult:
     """Run one sub-game against the injected opponent transport; return its outcome."""
     machine = machine if machine is not None else PeerStateMachine()
     advance_to_signed(machine)
-    await await_opponent_ready(opponent_url)
+    await await_opponent_ready(opponent_url, opponent_token)
     machine.require(TransitionEvent.of(E.START_SUB_GAME))
     context = build_context(
         shared,

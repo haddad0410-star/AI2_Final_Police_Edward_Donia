@@ -209,3 +209,43 @@ section below).
   `except McpError`/`except Exception`. `tests/unit/test_mcp_client.py`
   proves both the narrow reclassification and that non-timeout errors are
   never swallowed.
+
+## Gate A1 additions — local public-endpoint auth + rate-limit implementation
+
+- **`infrastructure/auth_middleware.py`**: `BearerAuthMiddleware`, a raw
+  ASGI middleware enforcing `Authorization: Bearer <PUBLIC_BIND_TOKEN>` on
+  every HTTP request, applied via `FastMCP.http_app(middleware=...)` --
+  before FastMCP's own routing/tool dispatch, never inside an individual
+  `@mcp.tool` (so a rejected request can never invoke one). Constant-time
+  comparison (`hmac.compare_digest`, verified by
+  `tests/unit/test_auth_middleware_constant_time.py` spying on the real
+  call, not a timing measurement). The rejection reason is one of a fixed
+  small set of words -- never the presented or expected token, in the
+  response, an exception, or anywhere else
+  (`tests/unit/test_auth_middleware.py`).
+- **`services/incoming_gatekeeper.py`** + **`infrastructure/rate_limit_middleware.py`**:
+  `IncomingGatekeeper` bounds concurrent in-flight requests (semaphore) and
+  the rolling per-minute rate (sliding window), config-driven from the
+  existing `rate_limits.json` top-level block (30/min, 2 concurrent, queue
+  100 -- already documented there as applying to "MCP calls too", never a
+  hardcoded second copy), independent of the Gmail sender's own
+  `Gatekeeper` (no shared mutable state). A rejected request never reaches
+  the wrapped app (`tests/unit/test_rate_limit_middleware.py`); cancellation,
+  an exception, or a timeout inside an admitted request's slot all still
+  release it (`tests/unit/test_incoming_gatekeeper.py`).
+- **`sdk/public_mode.py`**: `resolve_public_tokens()` fails closed --
+  `--public` with no (or a blank) `PUBLIC_BIND_TOKEN` refuses to start,
+  never falls back to unauthenticated mode. `_ALLOWED_LOCAL_HOSTS`
+  (`server_lifecycle.py`) is completely untouched by any of this --
+  `--public` only changes whether middleware is attached, never what host
+  is bound.
+- Real, real-HTTP proof (not just unit-level): `tests/integration/test_public_mode_http.py`
+  (missing/wrong/correct token, rate-limit rejection, still-127.0.0.1-only
+  bind) and `tests/integration/test_public_mode_lifecycle.py` (repeated
+  start/stop releases the same port, still no orphans). All of these run
+  against `127.0.0.1` only, in-process -- no tunnel, no public exposure.
+- **`infrastructure/mcp_client.py`**: adds `Authorization: Bearer <token>`
+  via `fastmcp.client.auth.bearer.BearerAuth` (backed by `pydantic.SecretStr`,
+  so it can't leak via a plain `repr()`) only when a token is given; a
+  local/no-token call is byte-for-byte the same request it always was
+  (`tests/unit/test_mcp_client_token.py`).

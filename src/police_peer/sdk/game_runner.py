@@ -16,11 +16,11 @@ from police_peer.domain.state_machine import PeerStateMachine
 from police_peer.infrastructure.http_transport import HttpOpponentTransport
 from police_peer.infrastructure.mcp_server import build_peer_server
 from police_peer.infrastructure.server_lifecycle import ManagedServer
+from police_peer.sdk.public_mode import build_public_middleware
 from police_peer.services.game_ids import derive_game_id, derive_game_uid
 from police_peer.services.result_agreement import finalize_series_agreement
 from police_peer.services.series_artifacts import write_series_artifacts
 from police_peer.services.series_runtime import run_series
-from police_peer.services.subgame_runtime import run_single_subgame
 from police_peer.shared.config_loader import load_private_config, load_shared_config, sha256_hex
 
 
@@ -34,54 +34,21 @@ def _load(config_dir: Path):
     return shared, private, config_sha, game_id, game_uid
 
 
-async def _serve(role: Role, config_sha: str, game_uid: str, machine: PeerStateMachine, port: int):
+async def _serve(
+    role: Role,
+    config_sha: str,
+    game_uid: str,
+    machine: PeerStateMachine,
+    port: int,
+    *,
+    public_token: str | None = None,
+    config_dir: Path | None = None,
+):
     mcp, inbox = build_peer_server(role, config_sha, game_uid=game_uid, machine=machine)
-    server = ManagedServer(mcp, "127.0.0.1", port)
+    middleware = build_public_middleware(public_token, config_dir) if public_token else None
+    server = ManagedServer(mcp, "127.0.0.1", port, middleware=middleware)
     await server.start()
     return server, inbox
-
-
-async def run_subgame_headless(
-    config_dir: Path,
-    opponent_url: str,
-    *,
-    poll_interval: float = 0.1,
-    max_polls: int = 300,
-) -> dict:
-    """Run one sub-game against a live opponent server; return a JSON-safe summary."""
-    shared, private, config_sha, game_id, game_uid = _load(config_dir)
-    machine = PeerStateMachine()
-    server, inbox = await _serve(
-        Role.POLICE, config_sha, game_uid, machine, private.network.my_port
-    )
-    transport = HttpOpponentTransport(
-        opponent_url,
-        inbox,
-        grid_size=shared.board_and_agents.grid_size,
-        poll_interval=poll_interval,
-        max_polls=max_polls,
-    )
-    try:
-        result = await run_single_subgame(
-            shared,
-            private,
-            transport,
-            game_uid=game_uid,
-            config_sha256=config_sha,
-            machine=machine,
-            opponent_url=opponent_url,
-        )
-    finally:
-        await server.stop()
-    return {
-        "mode": "run-subgame",
-        "game_id": game_id,
-        "game_uid": game_uid,
-        "result": result.result.value,
-        "steps": result.steps,
-        "reason": result.reason,
-        "final_state": machine.state.value,
-    }
 
 
 async def run_series_headless(
@@ -92,6 +59,8 @@ async def run_series_headless(
     poll_interval: float = 0.1,
     max_polls: int = 300,
     artifacts_dir: Path | None = None,
+    public_token: str | None = None,
+    opponent_token: str | None = None,
 ) -> dict:
     # `artifacts_dir`, if given, gets the four standardized JSON artifacts
     # (declaration, one config+log per sub-game played, result) reflecting
@@ -102,7 +71,13 @@ async def run_series_headless(
         print("SMOKE TEST ONLY: running a single sub-game, not the full 6-game series.")
     machine = PeerStateMachine()
     server, inbox = await _serve(
-        Role.POLICE, config_sha, game_uid, machine, private.network.my_port
+        Role.POLICE,
+        config_sha,
+        game_uid,
+        machine,
+        private.network.my_port,
+        public_token=public_token,
+        config_dir=config_dir,
     )
 
     def provider(_index: int) -> HttpOpponentTransport:
@@ -112,6 +87,7 @@ async def run_series_headless(
             grid_size=shared.board_and_agents.grid_size,
             poll_interval=poll_interval,
             max_polls=max_polls,
+            opponent_token=opponent_token,
         )
 
     try:
@@ -124,6 +100,7 @@ async def run_series_headless(
             num_games=num_games,
             machine=machine,
             opponent_url=opponent_url,
+            opponent_token=opponent_token,
         )
         series = await finalize_series_agreement(
             series,
@@ -132,6 +109,7 @@ async def run_series_headless(
             game_uid=game_uid,
             config_sha256=config_sha,
             role=Role.POLICE,
+            opponent_token=opponent_token,
         )
     finally:
         await server.stop()

@@ -27,11 +27,8 @@ from _port_utils import (
 
 from police_peer.domain.roles import Role
 from police_peer.infrastructure.mcp_server import build_peer_server
-from police_peer.sdk.game_runner import (
-    run_series_headless,
-    run_subgame_headless,
-    summary_exit_code,
-)
+from police_peer.sdk.game_runner import run_series_headless, summary_exit_code
+from police_peer.sdk.subgame_runner import run_subgame_headless
 from police_peer.shared.config_loader import sha256_hex
 
 REAL_CONFIG_DIR = Path(__file__).resolve().parents[2] / "config" / "police"

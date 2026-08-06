@@ -20,11 +20,26 @@ from police_peer.sdk.game_runner import (
 from police_peer.services import gui_sink
 
 
-def run_gui(config_dir: Path, opponent_url: str, smoke: bool, artifacts_dir: Path | None) -> int:
+def run_gui(
+    config_dir: Path,
+    opponent_url: str,
+    smoke: bool,
+    artifacts_dir: Path | None,
+    *,
+    public_token: str | None = None,
+    opponent_token: str | None = None,
+) -> int:
     bus = GuiEventBus()
     gui_sink.set_sink(bus.publish)
     runner = BackgroundRunner(
-        lambda: run_series_headless(config_dir, opponent_url, smoke, artifacts_dir=artifacts_dir)
+        lambda: run_series_headless(
+            config_dir,
+            opponent_url,
+            smoke,
+            artifacts_dir=artifacts_dir,
+            public_token=public_token,
+            opponent_token=opponent_token,
+        )
     )
 
     def on_close() -> None:

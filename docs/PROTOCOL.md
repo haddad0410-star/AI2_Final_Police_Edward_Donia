@@ -58,3 +58,14 @@ updated to reference `commitment/1` as the current binding sealed-record
 schema once both groups' contract is renegotiated with a real opponent;
 until then this is a same-project-internal schema unification, not yet a
 cross-team-negotiated protocol change.
+
+**Gate A1 -- optional transport-level bearer auth (`--public` mode only):**
+when this peer or the opponent runs with `--public`, every HTTP request to
+that peer must carry `Authorization: Bearer <its own PUBLIC_BIND_TOKEN>`,
+verified by `infrastructure/auth_middleware.py` before any tool dispatch.
+This is a transport-level addition, not a change to any message schema or
+tool argument shape -- ordinary localhost self-play (no `--public`) is
+completely unaffected, and the header is added by the *caller* (via
+`OPPONENT_MCP_TOKEN`, see `docs/PUBLIC_NETWORK_SETUP.md`), never embedded
+in a message body. See `docs/SECURITY.md`'s Gate A1 section for the full
+implementation.

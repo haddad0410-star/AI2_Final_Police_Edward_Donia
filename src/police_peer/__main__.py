@@ -21,14 +21,8 @@ import json
 import sys
 from pathlib import Path
 
-from police_peer import cli_gmail
+from police_peer import cli_gmail, cli_runners
 from police_peer.domain.roles import Role
-from police_peer.sdk.game_runner import (
-    print_summary,
-    run_series_headless,
-    run_subgame_headless,
-    summary_exit_code,
-)
 from police_peer.sdk.negotiation_runner import run_negotiation_smoke
 from police_peer.services.replay_verifier import verify_replay
 
@@ -40,32 +34,6 @@ def _negotiate_smoke(args: argparse.Namespace) -> int:
     summary = asyncio.run(run_negotiation_smoke(Role.POLICE, config_dir))
     print(json.dumps(summary, indent=2))
     return 0 if summary.get("outcome") == "negotiated" else 1
-
-
-def _run_subgame(args: argparse.Namespace) -> int:
-    summary = asyncio.run(run_subgame_headless(Path(args.config_dir), args.opponent_url))
-    print_summary(summary)
-    return summary_exit_code(summary)
-
-
-def _run_series(args: argparse.Namespace) -> int:
-    artifacts_dir = Path(args.artifacts_dir) if args.artifacts_dir else None
-    summary = asyncio.run(
-        run_series_headless(
-            Path(args.config_dir), args.opponent_url, smoke=args.smoke, artifacts_dir=artifacts_dir
-        )
-    )
-    print_summary(summary)
-    return summary_exit_code(summary)
-
-
-def _peer(args: argparse.Namespace) -> int:
-    if not args.gui:  # default, and explicit --no-gui, both land here
-        return _run_series(args)
-    from police_peer.sdk.gui_runner import run_gui
-
-    artifacts_dir = Path(args.artifacts_dir) if args.artifacts_dir else None
-    return run_gui(Path(args.config_dir), args.opponent_url, args.smoke, artifacts_dir)
 
 
 def _verify_replay(args: argparse.Namespace) -> int:
@@ -112,10 +80,16 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     default_url = "http://127.0.0.1:8902/mcp"
+    public_help = (
+        "Gate A1: enforce Authorization: Bearer PUBLIC_BIND_TOKEN on every "
+        "incoming request (still binds 127.0.0.1 only). Requires a nonempty "
+        "PUBLIC_BIND_TOKEN env var; OPPONENT_MCP_TOKEN is used when calling out."
+    )
     sub = subparsers.add_parser("run-subgame", help="Run one sub-game vs a live opponent")
     sub.add_argument("--headless", action="store_true", help="headless (no GUI); default mode")
     sub.add_argument("--config-dir", default=str(CONFIG_DIR))
     sub.add_argument("--opponent-url", default=default_url)
+    sub.add_argument("--public", action="store_true", help=public_help)
 
     series = subparsers.add_parser("run-series", help="Run the full 6-game series")
     series.add_argument("--headless", action="store_true", help="headless (no GUI); default mode")
@@ -125,6 +99,7 @@ def _build_parser() -> argparse.ArgumentParser:
     series.add_argument(
         "--artifacts-dir", default=None, help="write the 4 standardized JSON artifacts here"
     )
+    series.add_argument("--public", action="store_true", help=public_help)
 
     verify = subparsers.add_parser("verify-replay", help="Verify an artifact directory")
     verify.add_argument("--artifacts", required=True, help="directory of JSON artifacts")
@@ -137,6 +112,7 @@ def _build_parser() -> argparse.ArgumentParser:
     peer.add_argument("--config-dir", default=str(CONFIG_DIR))
     peer.add_argument("--opponent-url", default=default_url)
     peer.add_argument("--artifacts-dir", default=None)
+    peer.add_argument("--public", action="store_true", help=public_help)
 
     replay = subparsers.add_parser("replay", help="Graphical/headless post-game replay viewer")
     replay.add_argument("--gui", action="store_true", help="launch the graphical replay viewer")
@@ -159,13 +135,13 @@ def main() -> None:
     if args.command == "negotiate-smoke":
         sys.exit(_negotiate_smoke(args))
     if args.command == "run-subgame":
-        sys.exit(_run_subgame(args))
+        sys.exit(cli_runners.run_subgame(args))
     if args.command == "run-series":
-        sys.exit(_run_series(args))
+        sys.exit(cli_runners.run_series(args))
     if args.command == "verify-replay":
         sys.exit(_verify_replay(args))
     if args.command == "peer":
-        sys.exit(_peer(args))
+        sys.exit(cli_runners.run_peer(args))
     if args.command == "replay":
         sys.exit(_replay(args))
     if args.command == "report":

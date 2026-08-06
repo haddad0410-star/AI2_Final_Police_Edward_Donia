@@ -39,7 +39,7 @@ def _inbox_with_opponent_turn() -> PeerInbox:
 
 
 def test_exchange_turn_parses_opponent_reveal(monkeypatch) -> None:
-    async def _noop(url, message, timeout_seconds=30.0):
+    async def _noop(url, message, timeout_seconds=30.0, token=None):
         return {"ok": True}
 
     monkeypatch.setattr(ht, "call_receive_turn", _noop)
@@ -54,7 +54,7 @@ def test_exchange_turn_parses_opponent_reveal(monkeypatch) -> None:
 
 
 def test_exchange_turn_unreachable_opponent(monkeypatch) -> None:
-    async def _boom(url, message, timeout_seconds=30.0):
+    async def _boom(url, message, timeout_seconds=30.0, token=None):
         raise PeerUnavailableError("refused")
 
     monkeypatch.setattr(ht, "call_receive_turn", _boom)
@@ -65,7 +65,7 @@ def test_exchange_turn_unreachable_opponent(monkeypatch) -> None:
 
 
 def test_exchange_turn_no_reveal_times_out(monkeypatch) -> None:
-    async def _noop(url, message, timeout_seconds=30.0):
+    async def _noop(url, message, timeout_seconds=30.0, token=None):
         return {"ok": True}
 
     monkeypatch.setattr(ht, "call_receive_turn", _noop)
@@ -83,7 +83,7 @@ def test_progress_distinguishes_commit_rejected_from_reveal_rejected(monkeypatch
     booleans are read from where the exchange actually stopped, never
     hardcoded or collapsed onto a single pass/fail flag."""
 
-    async def _reject_commit(url, message, timeout_seconds=30.0):
+    async def _reject_commit(url, message, timeout_seconds=30.0, token=None):
         return {"ok": False}
 
     monkeypatch.setattr(ht, "call_receive_turn", _reject_commit)
@@ -93,7 +93,7 @@ def test_progress_distinguishes_commit_rejected_from_reveal_rejected(monkeypatch
 
     calls = {"n": 0}
 
-    async def _reject_reveal(url, message, timeout_seconds=30.0):
+    async def _reject_reveal(url, message, timeout_seconds=30.0, token=None):
         calls["n"] += 1
         return {"ok": calls["n"] == 1}
 
@@ -109,7 +109,7 @@ def test_progress_unreachable_on_commit_vs_unreachable_on_reveal(monkeypatch) ->
     ``PeerUnavailableError`` type, so this can only pass if progress is
     tracked live, not derived from the exception type/message alone."""
 
-    async def _boom_first(url, message, timeout_seconds=30.0):
+    async def _boom_first(url, message, timeout_seconds=30.0, token=None):
         raise PeerUnavailableError("refused")
 
     monkeypatch.setattr(ht, "call_receive_turn", _boom_first)
@@ -119,7 +119,7 @@ def test_progress_unreachable_on_commit_vs_unreachable_on_reveal(monkeypatch) ->
 
     calls = {"n": 0}
 
-    async def _boom_second(url, message, timeout_seconds=30.0):
+    async def _boom_second(url, message, timeout_seconds=30.0, token=None):
         calls["n"] += 1
         if calls["n"] == 1:
             return {"ok": True}
@@ -136,7 +136,7 @@ def test_progress_full_before_reveal_poll_timeout(monkeypatch) -> None:
     commit+reveal genuinely went through -- all three must be True even
     though the overall outcome is a TechnicalFailure."""
 
-    async def _noop(url, message, timeout_seconds=30.0):
+    async def _noop(url, message, timeout_seconds=30.0, token=None):
         return {"ok": True}
 
     monkeypatch.setattr(ht, "call_receive_turn", _noop)

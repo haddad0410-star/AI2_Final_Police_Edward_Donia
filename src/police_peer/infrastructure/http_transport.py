@@ -32,12 +32,14 @@ class HttpOpponentTransport:
         poll_interval: float = 0.1,
         max_polls: int = 300,
         grid_size: int = 7,
+        opponent_token: str | None = None,
     ) -> None:
         self._url = opponent_url
         self._inbox = inbox
         self._poll_interval = poll_interval
         self._max_polls = max_polls
         self._grid_size = grid_size
+        self._opponent_token = opponent_token
 
     async def exchange_turn(
         self, commitment: dict, reveal: dict
@@ -56,7 +58,7 @@ class HttpOpponentTransport:
         """
         commit_sent = commit_acked = reveal_sent = False
         try:
-            commit_ack = await call_receive_turn(self._url, commitment)
+            commit_ack = await call_receive_turn(self._url, commitment, token=self._opponent_token)
         except PeerUnavailableError as exc:
             return TechnicalFailure(f"opponent unreachable: {exc}")
         commit_sent = True
@@ -64,7 +66,7 @@ class HttpOpponentTransport:
             return TechnicalFailure(f"opponent rejected our commitment: {commit_ack}", commit_sent)
         commit_acked = True
         try:
-            reveal_ack = await call_receive_turn(self._url, reveal)
+            reveal_ack = await call_receive_turn(self._url, reveal, token=self._opponent_token)
         except PeerUnavailableError as exc:
             return TechnicalFailure(f"opponent unreachable: {exc}", commit_sent, commit_acked)
         reveal_sent = True

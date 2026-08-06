@@ -33,6 +33,7 @@ from dataclasses import dataclass
 
 import uvicorn
 from fastmcp import FastMCP
+from starlette.middleware import Middleware
 
 #: Hosts a ManagedServer may bind to during local development/testing.
 #: Public 0.0.0.0 exposure requires the manual-gate-approved tunnel setup,
@@ -77,13 +78,15 @@ class ManagedServer:
     real HTTP ASGI surface, so this peer can request a genuinely graceful
     stop instead of relying on task cancellation."""
 
-    def __init__(self, mcp: FastMCP, host: str, port: int) -> None:
+    def __init__(
+        self, mcp: FastMCP, host: str, port: int, *, middleware: list[Middleware] | None = None
+    ) -> None:
         if host not in _ALLOWED_LOCAL_HOSTS:
             raise ValueError(
                 f"refusing to bind to {host!r}: public network exposure requires "
                 "the manual-gate-approved tunnel setup, not a direct bind here"
             )
-        app = mcp.http_app(transport="http")
+        app = mcp.http_app(transport="http", middleware=middleware)
         config = uvicorn.Config(
             app, host=host, port=port, log_level="warning", lifespan="on", ws="websockets-sansio"
         )

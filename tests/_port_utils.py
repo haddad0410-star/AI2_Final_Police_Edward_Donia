@@ -76,15 +76,18 @@ def isolated_police_config_dir(
     return dest_dir
 
 
-async def start_test_server(mcp: FastMCP, port: int, host: str = HOST) -> ManagedServer:
+async def start_test_server(
+    mcp: FastMCP, port: int, host: str = HOST, *, middleware=None
+) -> ManagedServer:
     """Start ``mcp``'s real HTTP ASGI app via the same production-grade
     :class:`~police_peer.infrastructure.server_lifecycle.ManagedServer` used
     by ``server_lifecycle.py`` itself -- see its module docstring for why
     task-cancellation-based shutdown does not reliably close the listening
     socket, and why this replaced it everywhere (production and tests
-    alike).
+    alike). ``middleware``, when given, is forwarded unchanged (Gate A1
+    auth/rate-limit middleware under real HTTP).
     """
-    server = ManagedServer(mcp, host, port)
+    server = ManagedServer(mcp, host, port, middleware=middleware)
     await server.start()
     return server
 
