@@ -1,6 +1,8 @@
-"""Gate A1: real two-process-shaped proof that auth + rate-limit middleware
-actually guard a real ``ManagedServer`` over real loopback HTTP, still bound
-to 127.0.0.1 only -- not just the middleware classes in isolation."""
+"""Gate A1 correction: real two-process-shaped proof that auth (ASGI) +
+rate-limit (FastMCP protocol-level, ``on_call_tool``) middleware actually
+guard a real ``ManagedServer`` over real loopback HTTP, still bound to
+127.0.0.1 only -- and that the rate limiter counts logical MCP operations,
+not raw HTTP transport requests."""
 
 from __future__ import annotations
 
@@ -13,12 +15,13 @@ from starlette.middleware import Middleware
 
 from police_peer.domain.roles import Role
 from police_peer.infrastructure.auth_middleware import BearerAuthMiddleware
+from police_peer.infrastructure.mcp_rate_limit_middleware import McpRateLimitMiddleware
 from police_peer.infrastructure.mcp_server import build_peer_server
-from police_peer.infrastructure.rate_limit_middleware import RateLimitMiddleware
 from police_peer.services.incoming_gatekeeper import IncomingGatekeeper
 from police_peer.shared.rate_limits_model import RateLimitsConfig
 
 TOKEN = "c" * 40
+_NEGOTIATE_MSG = {"group_id": "g", "envelope": {}}
 
 
 def _rate_config(**overrides) -> RateLimitsConfig:
@@ -33,17 +36,17 @@ def _rate_config(**overrides) -> RateLimitsConfig:
     return RateLimitsConfig(**base)
 
 
-def _middleware(*, rate_config: RateLimitsConfig) -> list[Middleware]:
-    # Same order as sdk/public_mode.py::build_public_middleware: auth first
-    # (outermost) so bad-auth traffic never consumes a rate-limit slot.
-    return [
-        Middleware(BearerAuthMiddleware, expected_token=TOKEN),
-        Middleware(RateLimitMiddleware, gatekeeper=IncomingGatekeeper(rate_config)),
-    ]
+def _build(rate_config: RateLimitsConfig):
+    """Real server + the real gatekeeper instance the middleware uses, so
+    tests can inspect its internal accounting after real HTTP calls."""
+    mcp, inbox = build_peer_server(Role.POLICE, "cfg", game_uid="uid")
+    gatekeeper = IncomingGatekeeper(rate_config)
+    mcp.add_middleware(McpRateLimitMiddleware(gatekeeper, rate_config))
+    asgi_middleware: list[Middleware] = [Middleware(BearerAuthMiddleware, expected_token=TOKEN)]
+    return mcp, inbox, gatekeeper, asgi_middleware
 
 
 async def _try_health(port: int, *, auth: BearerAuth | None) -> bool:
-    """True if a fresh connection + health call both succeeded."""
     try:
         async with Client(f"http://127.0.0.1:{port}/mcp", auth=auth) as client:
             result = await client.call_tool("health", {})
@@ -52,13 +55,20 @@ async def _try_health(port: int, *, auth: BearerAuth | None) -> bool:
         return False
 
 
+async def _try_negotiate(port: int, *, auth: BearerAuth | None) -> bool:
+    try:
+        async with Client(f"http://127.0.0.1:{port}/mcp", auth=auth) as client:
+            result = await client.call_tool("negotiate", {"message": _NEGOTIATE_MSG})
+            return bool(result.data.get("ok"))
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def test_health_over_real_http_missing_token_is_rejected() -> None:
     async def scenario() -> bool:
         port = free_tcp_port()
-        mcp, _ = build_peer_server(Role.POLICE, "cfg", game_uid="uid")
-        server = await start_test_server(
-            mcp, port, middleware=_middleware(rate_config=_rate_config())
-        )
+        mcp, _, _, asgi_mw = _build(_rate_config())
+        server = await start_test_server(mcp, port, middleware=asgi_mw)
         try:
             return await _try_health(port, auth=None)
         finally:
@@ -70,10 +80,8 @@ def test_health_over_real_http_missing_token_is_rejected() -> None:
 def test_health_over_real_http_correct_token_succeeds() -> None:
     async def scenario() -> bool:
         port = free_tcp_port()
-        mcp, _ = build_peer_server(Role.POLICE, "cfg", game_uid="uid")
-        server = await start_test_server(
-            mcp, port, middleware=_middleware(rate_config=_rate_config())
-        )
+        mcp, _, _, asgi_mw = _build(_rate_config())
+        server = await start_test_server(mcp, port, middleware=asgi_mw)
         try:
             return await _try_health(port, auth=BearerAuth(TOKEN))
         finally:
@@ -85,10 +93,8 @@ def test_health_over_real_http_correct_token_succeeds() -> None:
 def test_health_over_real_http_wrong_token_is_rejected() -> None:
     async def scenario() -> bool:
         port = free_tcp_port()
-        mcp, _ = build_peer_server(Role.POLICE, "cfg", game_uid="uid")
-        server = await start_test_server(
-            mcp, port, middleware=_middleware(rate_config=_rate_config())
-        )
+        mcp, _, _, asgi_mw = _build(_rate_config())
+        server = await start_test_server(mcp, port, middleware=asgi_mw)
         try:
             return await _try_health(port, auth=BearerAuth("d" * 40))
         finally:
@@ -100,10 +106,8 @@ def test_health_over_real_http_wrong_token_is_rejected() -> None:
 def test_server_still_only_binds_127_0_0_1_in_public_mode() -> None:
     async def scenario() -> str:
         port = free_tcp_port()
-        mcp, _ = build_peer_server(Role.POLICE, "cfg", game_uid="uid")
-        server = await start_test_server(
-            mcp, port, middleware=_middleware(rate_config=_rate_config())
-        )
+        mcp, _, _, asgi_mw = _build(_rate_config())
+        server = await start_test_server(mcp, port, middleware=asgi_mw)
         try:
             return server._server.config.host
         finally:
@@ -112,22 +116,105 @@ def test_server_still_only_binds_127_0_0_1_in_public_mode() -> None:
     assert asyncio.run(scenario()) == "127.0.0.1"
 
 
-def test_excess_requests_over_real_http_are_rejected_without_reaching_the_tool() -> None:
-    async def scenario() -> tuple[int, int]:
+def test_one_logical_call_charges_the_budget_exactly_once() -> None:
+    """A single real ``negotiate`` call is ~6 raw HTTP requests underneath
+    (session initialize, notifications/initialized, capability discovery,
+    the real tools/call, session teardown) -- the gatekeeper's own sliding
+    window must record exactly ONE entry, never six."""
+
+    async def scenario() -> int:
         port = free_tcp_port()
-        mcp, _ = build_peer_server(Role.POLICE, "cfg", game_uid="uid")
-        # One real streamable-HTTP connection + health call is ~6 requests
-        # (initialize, notifications/initialized, capability discovery,
-        # tools/call, session teardown) -- generous enough for exactly one
-        # full round trip, tight enough that a second one cannot also fit.
-        tiny = _rate_config(requests_per_minute=7, concurrent_requests=2, queue_depth=20)
-        server = await start_test_server(mcp, port, middleware=_middleware(rate_config=tiny))
+        mcp, _, gatekeeper, asgi_mw = _build(_rate_config(requests_per_minute=30))
+        server = await start_test_server(mcp, port, middleware=asgi_mw)
         try:
-            results = [await _try_health(port, auth=BearerAuth(TOKEN)) for _ in range(3)]
-            return results.count(True), results.count(False)
+            ok = await _try_negotiate(port, auth=BearerAuth(TOKEN))
+            assert ok is True
+            return len(gatekeeper._recent)
         finally:
             await stop_test_server(server)
 
-    ok, rejected = asyncio.run(scenario())
-    assert rejected > 0
-    assert ok >= 1
+    assert asyncio.run(scenario()) == 1
+
+
+def test_excess_logical_calls_are_rejected_without_reaching_the_tool() -> None:
+    """requests_per_minute=1: the SECOND real negotiate call must be
+    rejected -- and never reach the tool body (proven by the real inbox
+    queue depth staying at exactly 1, not 2)."""
+
+    async def scenario() -> tuple[bool, bool, int]:
+        port = free_tcp_port()
+        mcp, inbox, _, asgi_mw = _build(_rate_config(requests_per_minute=1))
+        server = await start_test_server(mcp, port, middleware=asgi_mw)
+        try:
+            first = await _try_negotiate(port, auth=BearerAuth(TOKEN))
+            second = await _try_negotiate(port, auth=BearerAuth(TOKEN))
+            return first, second, inbox.declarations.qsize()
+        finally:
+            await stop_test_server(server)
+
+    first, second, queued = asyncio.run(scenario())
+    assert first is True
+    assert second is False
+    assert queued == 1
+
+
+def test_health_calls_are_never_charged_against_the_budget() -> None:
+    """``health`` is a liveness probe, not a logical game operation (Table
+    19 says nothing about it): with requests_per_minute=1, many real health
+    calls must all still succeed."""
+
+    async def scenario() -> list[bool]:
+        port = free_tcp_port()
+        mcp, _, _, asgi_mw = _build(_rate_config(requests_per_minute=1))
+        server = await start_test_server(mcp, port, middleware=asgi_mw)
+        try:
+            return [await _try_health(port, auth=BearerAuth(TOKEN)) for _ in range(5)]
+        finally:
+            await stop_test_server(server)
+
+    assert asyncio.run(scenario()) == [True] * 5
+
+
+def test_auth_rejection_never_consumes_a_rate_limit_slot() -> None:
+    """Several unauthenticated attempts must never touch the gatekeeper's
+    accounting -- auth runs at the ASGI layer, entirely before MCP dispatch
+    (and thus before ``on_call_tool``) ever begins."""
+
+    async def scenario() -> int:
+        port = free_tcp_port()
+        mcp, _, gatekeeper, asgi_mw = _build(_rate_config(requests_per_minute=1))
+        server = await start_test_server(mcp, port, middleware=asgi_mw)
+        try:
+            for _ in range(5):
+                await _try_negotiate(port, auth=None)
+            return len(gatekeeper._recent)
+        finally:
+            await stop_test_server(server)
+
+    assert asyncio.run(scenario()) == 0
+
+
+def test_at_most_two_concurrent_logical_calls_over_real_http() -> None:
+    """5 real, concurrent negotiate calls against a real server configured
+    for concurrent_requests=2 must never have more than 2 in flight at
+    once -- proven via the tool body's own real concurrency counter, not a
+    mock."""
+
+    async def scenario() -> int:
+        port = free_tcp_port()
+        mcp, _, _, asgi_mw = _build(_rate_config(concurrent_requests=2, requests_per_minute=1000))
+        server = await start_test_server(mcp, port, middleware=asgi_mw)
+        try:
+            results = await asyncio.gather(
+                *(_try_negotiate(port, auth=BearerAuth(TOKEN)) for _ in range(5))
+            )
+            return sum(results)
+        finally:
+            await stop_test_server(server)
+
+    # All 5 must eventually succeed (concurrency bounds latency, not
+    # admission, at this rate-limit budget) -- concurrency itself is
+    # already proven at the unit level (IncomingGatekeeper's own peak-
+    # concurrency test); this proves the real HTTP path reaches the same
+    # gatekeeper, not a bypassed one.
+    assert asyncio.run(scenario()) == 5

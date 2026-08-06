@@ -11,7 +11,7 @@ from pathlib import Path
 from police_peer.domain.roles import Role
 from police_peer.domain.state_machine import PeerStateMachine
 from police_peer.infrastructure.http_transport import HttpOpponentTransport
-from police_peer.sdk.game_runner import _load, _serve
+from police_peer.sdk.game_runner import _build_pacer, _load, _serve
 from police_peer.services.subgame_runtime import run_single_subgame
 
 
@@ -43,6 +43,7 @@ async def run_subgame_headless(
         poll_interval=poll_interval,
         max_polls=max_polls,
         opponent_token=opponent_token,
+        pacer=_build_pacer(opponent_token, config_dir),
     )
     try:
         result = await run_single_subgame(

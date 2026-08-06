@@ -18,10 +18,19 @@ from fastmcp.client.auth.bearer import BearerAuth
 from fastmcp.exceptions import ClientError
 from mcp.shared.exceptions import McpError
 
+from police_peer.infrastructure.mcp_rate_limit_middleware import OVERLOAD_ERROR_CODE
+
 #: FastMCP wraps unreachable-peer failures (connection refused, DNS, etc.) in
 #: a plain RuntimeError as well as the more specific types below -- all mean
 #: "the opponent could not be reached," never a bug in our own code.
 _CONNECTION_FAILURES = (OSError, TimeoutError, ClientError, RuntimeError)
+
+#: Appendix F Table 19's own binding minimums (status "minimum" -- "absent
+#: explicit agreement, the example value is the mandatory default"): a
+#: well-behaved client honors AT LEAST a 5-second backoff and allows itself
+#: AT LEAST 3 retries before giving up on a legitimate overload response.
+DEFAULT_RETRY_BACKOFF_SEC = 5.0
+DEFAULT_MAX_RETRIES = 3
 
 
 class PeerUnavailableError(Exception):
@@ -40,20 +49,46 @@ def _is_connection_timeout(exc: McpError) -> bool:
     return exc.error.code == httpx.codes.REQUEST_TIMEOUT
 
 
+def _retry_after(exc: McpError) -> float:
+    data = exc.error.data
+    if isinstance(data, dict):
+        value = data.get("retry_after_seconds")
+        if isinstance(value, int | float):
+            return float(value)
+    return DEFAULT_RETRY_BACKOFF_SEC
+
+
 async def _call(
     url: str, tool: str, arguments: dict, timeout_seconds: float, token: str | None = None
 ) -> dict:
+    """A legitimate overload response (``OVERLOAD_ERROR_CODE`` --
+    ``mcp_rate_limit_middleware.McpOverloadError``) is retried, honoring the
+    server's own ``retry_after_seconds`` hint, up to ``DEFAULT_MAX_RETRIES``
+    times -- Appendix F Table 19's own binding minimum retry count. Never
+    retried indefinitely: once exhausted, this becomes an ordinary
+    ``PeerUnavailableError``, the same outcome as any other opponent-trouble
+    case the rest of this codebase already knows how to handle gracefully."""
     auth = BearerAuth(token) if token else None
-    try:
-        async with Client(url, timeout=timeout_seconds, auth=auth) as client:
-            result = await client.call_tool(tool, arguments)
-    except _CONNECTION_FAILURES as exc:
-        raise PeerUnavailableError(f"peer at {url} did not respond: {exc}") from exc
-    except McpError as exc:
-        if not _is_connection_timeout(exc):
-            raise
-        raise PeerUnavailableError(f"peer at {url} did not respond: {exc}") from exc
-    return result.data
+    attempts = 0
+    while True:
+        try:
+            async with Client(url, timeout=timeout_seconds, auth=auth) as client:
+                result = await client.call_tool(tool, arguments)
+            return result.data
+        except _CONNECTION_FAILURES as exc:
+            raise PeerUnavailableError(f"peer at {url} did not respond: {exc}") from exc
+        except McpError as exc:
+            if exc.error.code == OVERLOAD_ERROR_CODE and attempts < DEFAULT_MAX_RETRIES:
+                attempts += 1
+                await asyncio.sleep(_retry_after(exc))
+                continue
+            if exc.error.code == OVERLOAD_ERROR_CODE:
+                raise PeerUnavailableError(
+                    f"peer at {url} stayed overloaded after {attempts} retries"
+                ) from exc
+            if not _is_connection_timeout(exc):
+                raise
+            raise PeerUnavailableError(f"peer at {url} did not respond: {exc}") from exc
 
 
 async def call_health(url: str, timeout_seconds: float = 5.0, token: str | None = None) -> dict:

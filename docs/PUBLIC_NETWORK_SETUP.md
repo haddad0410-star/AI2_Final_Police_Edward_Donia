@@ -21,18 +21,30 @@ ever exercised against `127.0.0.1` in this repo's own tests. Going public
   FastMCP's own routing/tool dispatch, never inside an individual
   `@mcp.tool`. Constant-time comparison (`hmac.compare_digest`).
 - `services/incoming_gatekeeper.py`'s `IncomingGatekeeper` +
-  `infrastructure/rate_limit_middleware.py`'s `RateLimitMiddleware`: bounds
-  concurrent in-flight requests and the rolling per-minute rate, honestly
-  rejecting (429) rather than queuing forever. Config-driven from
-  `rate_limits.json`'s top-level block (30/min, 2 concurrent, queue 100 —
-  the same binding minimums, already documented as applying to "MCP calls
-  too"), never a hardcoded second copy. Independent of the Gmail sender's
-  own `Gatekeeper` — no shared mutable state.
+  `infrastructure/mcp_rate_limit_middleware.py`'s `McpRateLimitMiddleware`:
+  bounds concurrent in-flight LOGICAL operations and the rolling per-minute
+  rate, honestly rejecting rather than queuing forever. **Gate A1
+  correction:** this is FastMCP protocol-level middleware
+  (`FastMCP.add_middleware`, hooking `on_call_tool`), not ASGI-level --
+  it charges exactly one accounting event per real tool call
+  (`negotiate`/`propose_config`/`receive_turn`/`submit_audit`/
+  `receive_control`; `health` excluded as a liveness probe), never the ~6
+  raw HTTP requests FastMCP's own session/capability/teardown plumbing
+  needs underneath one logical call. Config-driven from `rate_limits.json`'s
+  top-level block (30/min, 2 concurrent, queue 100 — the same binding
+  minimums), never a hardcoded second copy. Independent of the Gmail
+  sender's own `Gatekeeper` — no shared mutable state.
+- `infrastructure/outbound_pacer.py`'s `OutboundPacer` (Gate A1 correction):
+  proactively paces outbound calls to a `--public` opponent under the same
+  binding minimums, so a compliant client rarely if ever needs the
+  opponent to reject anything. Waits (never rejects) for a slot; only
+  constructed when calling an opponent that requires a token.
 - `sdk/public_mode.py`: `resolve_public_tokens()` fails closed if
   `--public` is given without a nonempty `PUBLIC_BIND_TOKEN`;
-  `build_public_middleware()` wires auth first (outermost), then the rate
-  limiter, so unauthenticated noise never consumes a legitimate request's
-  rate budget.
+  `build_public_middleware()` registers the MCP-level rate limiter on the
+  server directly and returns the ASGI auth middleware list, so an
+  unauthenticated request is rejected before MCP dispatch (and thus the
+  rate limiter) ever runs.
 - `--public` is a real flag on `run-subgame`/`run-series`/`peer`
   (`__main__.py` / `cli_runners.py`). Without it, local behavior is
   provably unchanged (existing test suite, unmodified, still green).
@@ -40,7 +52,9 @@ ever exercised against `127.0.0.1` in this repo's own tests. Going public
   `Authorization: Bearer <OPPONENT_MCP_TOKEN>` only when a token is given
   (`fastmcp.client.auth.bearer.BearerAuth`, backed by `pydantic.SecretStr`
   so it can never leak via a plain `repr()`); a local/no-token call is
-  byte-for-byte the same request it always was.
+  byte-for-byte the same request it always was. A real overload response
+  is retried (honoring the server's `retry_after_seconds`, bounded by the
+  binding minimum retry count) rather than failing immediately.
 
 ## Token handling
 

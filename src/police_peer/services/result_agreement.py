@@ -18,6 +18,7 @@ from dataclasses import replace
 from police_peer.domain.roles import Role
 from police_peer.infrastructure.inbox import PeerInbox
 from police_peer.infrastructure.mcp_client import PeerUnavailableError, call_submit_audit
+from police_peer.infrastructure.outbound_pacer import OutboundPacer
 from police_peer.services.series_runtime import SeriesResult
 from police_peer.services.series_scoring import (
     FinalAgreement,
@@ -106,6 +107,7 @@ async def exchange_and_resolve_agreement(
     attempts: int = 100,
     poll_interval: float = 0.1,
     opponent_token: str | None = None,
+    pacer: OutboundPacer | None = None,
 ) -> FinalAgreement:
     # Send our own result, wait (bounded) for the opponent's, and resolve.
     # Never invents a their_* value: an unreachable opponent or a timed-out
@@ -122,7 +124,8 @@ async def exchange_and_resolve_agreement(
         result_digest=result_digest,
     )
     with contextlib.suppress(PeerUnavailableError):
-        await call_submit_audit(opponent_url, message, token=opponent_token)
+        async with pacer.slot() if pacer is not None else contextlib.nullcontext():
+            await call_submit_audit(opponent_url, message, token=opponent_token)
 
     theirs = await _await_opponent_agreement(
         inbox, sender.opponent(), attempts=attempts, poll_interval=poll_interval
@@ -145,6 +148,7 @@ async def finalize_series_agreement(
     config_sha256: str,
     role: Role,
     opponent_token: str | None = None,
+    pacer: OutboundPacer | None = None,
 ) -> SeriesResult:
     """Replace `series.agreement` with the REAL bilaterally-exchanged result,
     only when the series itself completed normally (a technical loss keeps
@@ -162,5 +166,6 @@ async def finalize_series_agreement(
         num_sub_games=len(series.sub_games),
         result_digest=digest,
         opponent_token=opponent_token,
+        pacer=pacer,
     )
     return replace(series, agreement=agreement)

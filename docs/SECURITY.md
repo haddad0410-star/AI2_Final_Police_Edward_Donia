@@ -223,29 +223,67 @@ section below).
   small set of words -- never the presented or expected token, in the
   response, an exception, or anywhere else
   (`tests/unit/test_auth_middleware.py`).
-- **`services/incoming_gatekeeper.py`** + **`infrastructure/rate_limit_middleware.py`**:
-  `IncomingGatekeeper` bounds concurrent in-flight requests (semaphore) and
-  the rolling per-minute rate (sliding window), config-driven from the
-  existing `rate_limits.json` top-level block (30/min, 2 concurrent, queue
-  100 -- already documented there as applying to "MCP calls too", never a
-  hardcoded second copy), independent of the Gmail sender's own
-  `Gatekeeper` (no shared mutable state). A rejected request never reaches
-  the wrapped app (`tests/unit/test_rate_limit_middleware.py`); cancellation,
-  an exception, or a timeout inside an admitted request's slot all still
-  release it (`tests/unit/test_incoming_gatekeeper.py`).
+- **`services/incoming_gatekeeper.py`**: `IncomingGatekeeper` bounds
+  concurrent in-flight operations (semaphore) and the rolling per-minute
+  rate (sliding window), config-driven from the existing `rate_limits.json`
+  top-level block (30/min, 2 concurrent, queue 100), independent of the
+  Gmail sender's own `Gatekeeper` (no shared mutable state). Cancellation,
+  an exception, or a timeout inside an admitted slot all still release it
+  (`tests/unit/test_incoming_gatekeeper.py`).
 - **`sdk/public_mode.py`**: `resolve_public_tokens()` fails closed --
   `--public` with no (or a blank) `PUBLIC_BIND_TOKEN` refuses to start,
   never falls back to unauthenticated mode. `_ALLOWED_LOCAL_HOSTS`
   (`server_lifecycle.py`) is completely untouched by any of this --
   `--public` only changes whether middleware is attached, never what host
   is bound.
-- Real, real-HTTP proof (not just unit-level): `tests/integration/test_public_mode_http.py`
-  (missing/wrong/correct token, rate-limit rejection, still-127.0.0.1-only
-  bind) and `tests/integration/test_public_mode_lifecycle.py` (repeated
-  start/stop releases the same port, still no orphans). All of these run
-  against `127.0.0.1` only, in-process -- no tunnel, no public exposure.
 - **`infrastructure/mcp_client.py`**: adds `Authorization: Bearer <token>`
   via `fastmcp.client.auth.bearer.BearerAuth` (backed by `pydantic.SecretStr`,
   so it can't leak via a plain `repr()`) only when a token is given; a
   local/no-token call is byte-for-byte the same request it always was
   (`tests/unit/test_mcp_client_token.py`).
+
+## Gate A1 correction — logical-operation rate limiting, not raw HTTP
+
+The original Gate A1 rate limiter was ASGI-level, so it counted every raw
+HTTP request FastMCP's streamable-HTTP transport happens to use underneath
+one logical call (session initialize, `notifications/initialized`,
+capability discovery, the real `tools/call`, session teardown -- roughly
+6 raw requests per call). Appendix F Table 19's "30 requests per minute"
+binding minimum is a logical-operation budget (the table's own worked
+context, per this project's `rate_limits.json`, is an outbound API-call
+Gatekeeper), so counting raw transport frames against it made the
+committed 30/min config unable to sustain even light real gameplay --
+discovered only by actually running a real authenticated two-process
+series, not by any unit or single-server integration test.
+
+- **`infrastructure/mcp_rate_limit_middleware.py`**: `McpRateLimitMiddleware`,
+  a FastMCP protocol-level middleware (`Middleware.on_call_tool`,
+  registered via `FastMCP.add_middleware` -- NOT the ASGI
+  `http_app(middleware=...)` list) charges exactly one `IncomingGatekeeper`
+  slot per real `tools/call` dispatch, before the tool body runs
+  (`tests/unit/test_mcp_rate_limit_middleware.py`,
+  `tests/integration/test_public_mode_http.py`). `health` is excluded
+  (liveness/readiness probe, not a logical game operation). Auth stays
+  ASGI-level, unchanged -- it must guard session establishment itself.
+- **`infrastructure/outbound_pacer.py`**: `OutboundPacer` proactively
+  WAITS (never rejects) for a rate/concurrency slot before an outbound call
+  to a `--public` opponent, so a compliant client paces itself under the
+  same binding minimums rather than bursting and relying on repeated
+  overload responses (`tests/unit/test_outbound_pacer.py`). Only
+  constructed when an opponent token is known (i.e. the opponent runs
+  `--public`); ordinary local self-play never builds one
+  (`tests/unit/test_pacer_gating.py`).
+- **`infrastructure/mcp_client.py`**: a real overload response
+  (`McpOverloadError`, a distinct JSON-RPC error code) is retried, honoring
+  the server's own `retry_after_seconds` hint, up to `DEFAULT_MAX_RETRIES`
+  (3 -- Table 19's binding minimum retry count) times, then becomes an
+  ordinary `PeerUnavailableError` -- never retried indefinitely
+  (`tests/unit/test_mcp_client_retry_backoff.py`).
+- Real, real-HTTP proof (not just unit-level): `tests/integration/test_public_mode_http.py`
+  (missing/wrong/correct token, one logical call charges the budget exactly
+  once despite ~6 raw HTTP requests underneath, excess logical calls
+  rejected before the tool runs, `health` never charged, auth rejection
+  never charged, max-2-concurrent, still-127.0.0.1-only bind) and
+  `tests/integration/test_public_mode_lifecycle.py` (repeated start/stop
+  releases the same port, still no orphans). All of these run against
+  `127.0.0.1` only, in-process -- no tunnel, no public exposure.

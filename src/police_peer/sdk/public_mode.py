@@ -1,8 +1,14 @@
-"""Gate A1: builds the auth + rate-limit middleware stack for ``--public``
-mode. Split out of ``game_runner.py`` to stay under the 150-line cap. Auth
-runs first (outermost), so an unauthenticated/invalid-token request is
-rejected before it ever consumes a rate-limit slot meant for legitimate
-traffic -- verified empirically in ``tests/integration/test_public_mode_http.py``.
+"""Gate A1: builds the auth + rate-limit stack for ``--public`` mode. Split
+out of ``game_runner.py`` to stay under the 150-line cap.
+
+Auth stays ASGI-level (``BearerAuthMiddleware``, via ``http_app(middleware=
+...)``) -- it must guard session establishment itself, before any MCP
+message is even parsed. Rate limiting (Gate A1 correction) is FastMCP
+protocol-level (``McpRateLimitMiddleware``, via ``FastMCP.add_middleware``),
+so it counts real logical tool calls, not raw HTTP transport frames -- see
+``infrastructure/mcp_rate_limit_middleware.py``'s module docstring. An
+unauthenticated request never reaches MCP dispatch at all, so it can never
+consume a rate-limit slot either way.
 """
 
 from __future__ import annotations
@@ -10,10 +16,11 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from fastmcp import FastMCP
 from starlette.middleware import Middleware
 
 from police_peer.infrastructure.auth_middleware import BearerAuthMiddleware
-from police_peer.infrastructure.rate_limit_middleware import RateLimitMiddleware
+from police_peer.infrastructure.mcp_rate_limit_middleware import McpRateLimitMiddleware
 from police_peer.services.incoming_gatekeeper import IncomingGatekeeper
 from police_peer.shared.config_loader import load_rate_limits
 
@@ -36,14 +43,11 @@ def resolve_public_tokens(public: bool) -> tuple[str | None, str | None]:
     return token, opponent_token
 
 
-def build_public_middleware(public_token: str, config_dir: Path) -> list[Middleware]:
-    """Auth is checked first (outermost): an invalid/missing token is
-    rejected before it can ever consume a rate-limit slot. Only requests
-    that pass auth reach the Gatekeeper, which in turn only lets an
-    admitted request reach the real FastMCP app/tool dispatch."""
+def build_public_middleware(mcp: FastMCP, public_token: str, config_dir: Path) -> list[Middleware]:
+    """Registers the logical-operation rate limiter directly on ``mcp``
+    (must happen before ``mcp.http_app()`` builds the ASGI app) and returns
+    the ASGI middleware list (auth only) for ``http_app(middleware=...)``."""
     rate_config = load_rate_limits(config_dir / "rate_limits.json")
     gatekeeper = IncomingGatekeeper(rate_config)
-    return [
-        Middleware(BearerAuthMiddleware, expected_token=public_token),
-        Middleware(RateLimitMiddleware, gatekeeper=gatekeeper),
-    ]
+    mcp.add_middleware(McpRateLimitMiddleware(gatekeeper, rate_config))
+    return [Middleware(BearerAuthMiddleware, expected_token=public_token)]

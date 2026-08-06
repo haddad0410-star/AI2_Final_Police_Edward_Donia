@@ -15,13 +15,19 @@ from police_peer.domain.roles import Role
 from police_peer.domain.state_machine import PeerStateMachine
 from police_peer.infrastructure.http_transport import HttpOpponentTransport
 from police_peer.infrastructure.mcp_server import build_peer_server
+from police_peer.infrastructure.outbound_pacer import OutboundPacer
 from police_peer.infrastructure.server_lifecycle import ManagedServer
 from police_peer.sdk.public_mode import build_public_middleware
 from police_peer.services.game_ids import derive_game_id, derive_game_uid
 from police_peer.services.result_agreement import finalize_series_agreement
 from police_peer.services.series_artifacts import write_series_artifacts
 from police_peer.services.series_runtime import run_series
-from police_peer.shared.config_loader import load_private_config, load_shared_config, sha256_hex
+from police_peer.shared.config_loader import (
+    load_private_config,
+    load_rate_limits,
+    load_shared_config,
+    sha256_hex,
+)
 
 
 def _load(config_dir: Path):
@@ -45,10 +51,19 @@ async def _serve(
     config_dir: Path | None = None,
 ):
     mcp, inbox = build_peer_server(role, config_sha, game_uid=game_uid, machine=machine)
-    middleware = build_public_middleware(public_token, config_dir) if public_token else None
+    middleware = build_public_middleware(mcp, public_token, config_dir) if public_token else None
     server = ManagedServer(mcp, "127.0.0.1", port, middleware=middleware)
     await server.start()
     return server, inbox
+
+
+def _build_pacer(opponent_token: str | None, config_dir: Path) -> OutboundPacer | None:
+    """A pacer is only needed when calling a ``--public`` opponent (signaled
+    by possessing their token) -- ordinary local self-play never constructs
+    one, so its behavior is provably unaffected."""
+    if opponent_token is None:
+        return None
+    return OutboundPacer(load_rate_limits(config_dir / "rate_limits.json"))
 
 
 async def run_series_headless(
@@ -79,6 +94,11 @@ async def run_series_headless(
         public_token=public_token,
         config_dir=config_dir,
     )
+    # One pacer for the WHOLE series (not per sub-game): its sliding window
+    # must track cumulative outbound volume across all 6 sub-games, matching
+    # the opponent's own incoming Gatekeeper's per-process (not per-sub-game)
+    # lifetime.
+    pacer = _build_pacer(opponent_token, config_dir)
 
     def provider(_index: int) -> HttpOpponentTransport:
         return HttpOpponentTransport(
@@ -88,6 +108,7 @@ async def run_series_headless(
             poll_interval=poll_interval,
             max_polls=max_polls,
             opponent_token=opponent_token,
+            pacer=pacer,
         )
 
     try:
@@ -110,6 +131,7 @@ async def run_series_headless(
             config_sha256=config_sha,
             role=Role.POLICE,
             opponent_token=opponent_token,
+            pacer=pacer,
         )
     finally:
         await server.stop()

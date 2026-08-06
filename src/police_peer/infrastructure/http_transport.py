@@ -18,6 +18,7 @@ import asyncio
 
 from police_peer.infrastructure.inbox import PeerInbox
 from police_peer.infrastructure.mcp_client import PeerUnavailableError, call_receive_turn
+from police_peer.infrastructure.outbound_pacer import OutboundPacer
 from police_peer.services.transport import OpponentReveal, TechnicalFailure
 
 
@@ -33,6 +34,7 @@ class HttpOpponentTransport:
         max_polls: int = 300,
         grid_size: int = 7,
         opponent_token: str | None = None,
+        pacer: OutboundPacer | None = None,
     ) -> None:
         self._url = opponent_url
         self._inbox = inbox
@@ -40,6 +42,16 @@ class HttpOpponentTransport:
         self._max_polls = max_polls
         self._grid_size = grid_size
         self._opponent_token = opponent_token
+        self._pacer = pacer
+
+    async def _call_receive_turn(self, message: dict) -> dict:
+        """Proactively paced (Gate A1 correction) when a pacer is given --
+        never for local/no-token opponents, which stay byte-for-byte
+        unaffected."""
+        if self._pacer is None:
+            return await call_receive_turn(self._url, message, token=self._opponent_token)
+        async with self._pacer.slot():
+            return await call_receive_turn(self._url, message, token=self._opponent_token)
 
     async def exchange_turn(
         self, commitment: dict, reveal: dict
@@ -58,7 +70,7 @@ class HttpOpponentTransport:
         """
         commit_sent = commit_acked = reveal_sent = False
         try:
-            commit_ack = await call_receive_turn(self._url, commitment, token=self._opponent_token)
+            commit_ack = await self._call_receive_turn(commitment)
         except PeerUnavailableError as exc:
             return TechnicalFailure(f"opponent unreachable: {exc}")
         commit_sent = True
@@ -66,7 +78,7 @@ class HttpOpponentTransport:
             return TechnicalFailure(f"opponent rejected our commitment: {commit_ack}", commit_sent)
         commit_acked = True
         try:
-            reveal_ack = await call_receive_turn(self._url, reveal, token=self._opponent_token)
+            reveal_ack = await self._call_receive_turn(reveal)
         except PeerUnavailableError as exc:
             return TechnicalFailure(f"opponent unreachable: {exc}", commit_sent, commit_acked)
         reveal_sent = True
