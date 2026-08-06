@@ -33,7 +33,7 @@ def test_missing_private_file_rejected() -> None:
 
 def test_real_private_config_loads_and_has_no_override() -> None:
     config = load_private_config(REAL_PRIVATE_CONFIG)
-    assert config.game.group_id == "edward-donia"
+    assert config.game.group_id == "ed%do111"
     assert config.network.my_port == 8901
     assert config.email.recipient == "rmisegal+uoh26finalgame@gmail.com"
     assert config.email.mode == "disabled"

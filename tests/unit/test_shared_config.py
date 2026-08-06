@@ -12,7 +12,7 @@ from police_peer.shared.errors import ConfigError
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 REAL_CONFIG = Path(__file__).resolve().parents[2] / "config" / "police" / "game.json"
-EXPECTED_REAL_CONFIG_SHA256 = "40d728e9ff1c0cfe25f4b7bfe814fef317576b5b0c1404106447dc0eaf39e9a5"
+EXPECTED_REAL_CONFIG_SHA256 = "e9a01d1afc507c17a545859e309e8a29f4a3232023084ff1440baf64cc698d0f"
 
 
 def test_valid_shared_config_loads() -> None:

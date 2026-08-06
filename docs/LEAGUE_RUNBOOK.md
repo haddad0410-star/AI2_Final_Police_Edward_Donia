@@ -79,7 +79,7 @@
 
 This checklist has not been run against a real distinct opponent yet — only
 local self-play matches, run against this peer's own second process on
-`127.0.0.1` under the same provisional group id, not a distinct external
+`127.0.0.1` under the same official group id (`ed%do111`), not a distinct external
 opponent. The bilateral result-agreement protocol itself is real and
 verified: the latest local self-play series independently reaches
 `agreement_status: "agreed"` on both sides (matching totals, matching

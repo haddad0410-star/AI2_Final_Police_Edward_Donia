@@ -10,7 +10,7 @@ version = "0.1.0"
 
 [game]
 group_name = "Edward-Donia"
-group_id = "edward-donia"          # PROVISIONAL -- verify against the course's binding group-ID rule
+group_id = "ed%do111"          # OFFICIAL course-assigned group id (course-confirmed)
 sub_game_number = 1
 members = ["Edward Haddad 214083115", "Donia Naser 212810493"]
 repos = { police = "https://github.com/haddad0410-star/AI2_Final_Police_Edward_Donia", thief = "https://github.com/haddad0410-star/AI2_Final_Thief_Edward_Donia" }

@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "_note": "Shared, agreed game terms for the AI2 final project (Edward Haddad / Donia Naser, provisional group id 'edward-donia' -- see the single group-id warning in each repo's README.md). Both peers (police_peer, thief_peer) hold a byte-for-byte identical copy of this file, verified by SHA-256 in the development workspace. Source of every value: `_post4b_supplementary_evidence/audit/binding_parameters.json` (bundled in the review ZIP), itself extracted from Appendix F of assignment_materials/police_thief_p2p.pdf and visually re-verified (`_post4b_supplementary_evidence/audit/visual_verification.md`). This is NOT copied from reference_only/config -- it is built fresh from our own audit of the book.",
-  "agreed_between": ["edward-donia"],
-  "_agreed_between_note": "Placeholder for local self-play/smoke testing under our own provisional group id. Replace with ['edward-donia', '<opponent-group-id>'] once a real opponent is negotiated (see `_post4b_supplementary_evidence/audit/manual_gates.md` Gate B). Never invent an opponent identity.",
+  "_note": "Shared, agreed game terms for the AI2 final project (Edward Haddad / Donia Naser, official course-assigned group id 'ed%do111'). Both peers (police_peer, thief_peer) hold a byte-for-byte identical copy of this file, verified by SHA-256 in the development workspace. Source of every value: `_post4b_supplementary_evidence/audit/binding_parameters.json` (bundled in the review ZIP), itself extracted from Appendix F of assignment_materials/police_thief_p2p.pdf and visually re-verified (`_post4b_supplementary_evidence/audit/visual_verification.md`). This is NOT copied from reference_only/config -- it is built fresh from our own audit of the book.",
+  "agreed_between": ["ed%do111"],
+  "_agreed_between_note": "Placeholder for local self-play/smoke testing under our own official group id. Replace with ['ed%do111', '<opponent-group-id>'] once a real opponent is negotiated (see `_post4b_supplementary_evidence/audit/manual_gates.md` Gate B). Never invent an opponent identity.",
   "board_and_agents": {
     "grid_size": 7,
     "num_agents": 2,

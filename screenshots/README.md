@@ -169,9 +169,18 @@ parameter changed; stripping every underscore-prefixed key from both
 versions and comparing what remains yields byte-identical gameplay values.
 That metadata-only edit changed the SHA-256 from
 `5336607ef7f6cd786830b3a0640d4e2defbf1a96724fec498498017ca935c541` to the
-current `40d728e9ff1c0cfe25f4b7bfe814fef317576b5b0c1404106447dc0eaf39e9a5`,
-which is what every current, authoritative bilateral artifact
-(`_post4b_supplementary_evidence/batch4b/`) uses. These screenshots
-demonstrate real GUI/replay behavior, not the final config-file byte hash,
-and were not regenerated for a change that alters no gameplay parameter.
-Full detail: `_post4b_supplementary_evidence/post4b_finalization/screenshot_audit.md`.
+`40d728e9ff1c0cfe25f4b7bfe814fef317576b5b0c1404106447dc0eaf39e9a5`,
+which is what every bilateral artifact through Gate A2
+(`_post4b_supplementary_evidence/batch4b/`) uses. On 2026-08-06 the
+official course-assigned group id (`ed%do111`) was confirmed and replaced
+the provisional placeholder (`edward-donia`) previously used in
+`agreed_between`/`_note`/`_agreed_between_note` — again a metadata-only
+change, no board/movement/scoring/barrier/scent/league/rate-limit
+parameter touched — moving the hash a third time, to
+**`e9a01d1afc507c17a545859e309e8a29f4a3232023084ff1440baf64cc698d0f`**,
+which is the current authoritative value. These screenshots demonstrate
+real GUI/replay behavior, not the final config-file byte hash, and were
+not regenerated for either change since neither alters a gameplay
+parameter. Full detail:
+`_post4b_supplementary_evidence/post4b_finalization/screenshot_audit.md`,
+`integration_lab/audit/PROGRESS.md` (group-ID migration entry).

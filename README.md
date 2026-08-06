@@ -37,8 +37,7 @@ claimed anywhere in this repository.
 
 - Edward Haddad — 214083115
 - Donia Naser — 212810493
-- Provisional group ID: `edward-donia` (**configurable, requires final verification**
-  against the course's binding group-ID assignment rule)
+- Official course-assigned group ID: `ed%do111`
 
 ## Sibling repository
 
