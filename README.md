@@ -46,10 +46,11 @@ This is the **Police** peer. The **Thief** peer lives in a separate, independent
 repository:
 `https://github.com/haddad0410-star/AI2_Final_Thief_Edward_Donia`.
 
-Both `AI2_Final_Police_Edward_Donia` and `AI2_Final_Thief_Edward_Donia` are
-private GitHub repositories that now exist under `haddad0410-star`. Both are
-currently **empty** — the verified local code has not yet been pushed, and
-no Git remote is configured in either local repository yet.
+Both private GitHub repositories exist under `haddad0410-star` and contain
+the independently verified local baseline on the `main` branch. Each peer
+remains an independent repository and cross-links the sibling repository.
+External/manual readiness gates and the final submission tag are tracked
+separately and are not claimed complete here.
 
 Per the project's isolation rules, this repository does **not** import from the
 sibling repository or from `integration_lab/` (the multi-repo development
