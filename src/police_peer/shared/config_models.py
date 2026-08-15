@@ -7,6 +7,7 @@ and are ignored here, never treated as data.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from police_peer.shared.config_sections import (
@@ -60,6 +61,31 @@ def _require(data: dict, key: str) -> dict:
     return _clean(value)
 
 
+#: A documented, non-binding reference-repo addition (not a numbered Appendix F
+#: value -- see risk_register.md risk #2). Tolerated as an optional extension:
+#: validated if present, then dropped, since Pheromones has no field for it and
+#: no gameplay code consumes it. Never required; any OTHER unrecognized key in
+#: this section still fails construction, same as before.
+_OPTIONAL_PHEROMONE_EXTENSION = "pheromone_min_center_intensity"
+
+
+def _extract_pheromones(data: dict) -> dict:
+    section = _require(data, "pheromones")
+    if _OPTIONAL_PHEROMONE_EXTENSION in section:
+        value = section[_OPTIONAL_PHEROMONE_EXTENSION]
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or value < 0
+        ):
+            raise ConfigError(
+                f"{_OPTIONAL_PHEROMONE_EXTENSION} must be a finite non-negative number, got {value!r}"
+            )
+        section = {k: v for k, v in section.items() if k != _OPTIONAL_PHEROMONE_EXTENSION}
+    return section
+
+
 @dataclass(frozen=True, slots=True)
 class SharedGameConfig:
     """The fully parsed and validated shared game.json constitution."""
@@ -84,7 +110,7 @@ class SharedGameConfig:
         world = World(**_require(data, "world"))
         movement = MovementAndBarriers(**_require(data, "movement_and_barriers"))
         scoring = Scoring(**_require(data, "scoring"))
-        pheromones = Pheromones(**_require(data, "pheromones"))
+        pheromones = Pheromones(**_extract_pheromones(data))
         league = NetworkAndLeague(**_require(data, "network_and_league"))
         rate_limits = RateLimiterGatekeeper(**_require(data, "rate_limiter_gatekeeper"))
 
