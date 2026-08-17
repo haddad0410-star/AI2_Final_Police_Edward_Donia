@@ -62,10 +62,10 @@ def _require(data: dict, key: str) -> dict:
 
 
 #: A documented, non-binding reference-repo addition (not a numbered Appendix F
-#: value -- see risk_register.md risk #2). Tolerated as an optional extension:
-#: validated if present, then dropped, since Pheromones has no field for it and
-#: no gameplay code consumes it. Never required; any OTHER unrecognized key in
-#: this section still fails construction, same as before.
+#: value -- see risk_register.md risk #2). Optional: validated if present and
+#: kept (Pheromones.pheromone_min_center_intensity defaults to None when
+#: absent). Never required; any OTHER unrecognized key in this section still
+#: fails construction, same as before.
 _OPTIONAL_PHEROMONE_EXTENSION = "pheromone_min_center_intensity"
 
 
@@ -82,7 +82,6 @@ def _extract_pheromones(data: dict) -> dict:
             raise ConfigError(
                 f"{_OPTIONAL_PHEROMONE_EXTENSION} must be a finite non-negative number, got {value!r}"
             )
-        section = {k: v for k, v in section.items() if k != _OPTIONAL_PHEROMONE_EXTENSION}
     return section
 
 

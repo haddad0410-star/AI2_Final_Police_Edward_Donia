@@ -4,14 +4,12 @@ Both peers derive these independently from data they already hold -- the sorted
 group ids plus the negotiated terms -- so no extra round-trip is needed and
 all four JSON artifacts share one identity.
 
-``min_center_intensity`` (moamteam's 14th signed term) is intentionally absent
-from ``terms_from_shared_config`` below. Our own config schema treats
-``pheromone_min_center_intensity`` as a non-binding optional extension by
-deliberate design (docs/risk_register.md risk #2), and two existing tests
-(``test_pheromone_extension_tolerance.py::test_extension_never_required_in_baseline``,
-``test_shared_config.py::test_pheromone_min_center_intensity_not_present``)
-explicitly guard our real config against ever carrying it. Adding it here
-would need that decision revisited first, not just this projection edited.
+``min_center_intensity`` (moamteam's 14th signed term) is included in
+``terms_from_shared_config`` below only when the loaded config actually
+carries ``pheromone_min_center_intensity`` -- it remains a non-binding
+optional extension for any OTHER pairing that hasn't negotiated it
+(docs/risk_register.md risk #2), so the terms this peer signs only grow to
+include it when a real config value has been agreed and set.
 """
 
 from __future__ import annotations
@@ -30,8 +28,7 @@ def terms_from_shared_config(shared: SharedGameConfig) -> dict:
     config file's on-disk section/field names (moamteam, 2026-08-17: the
     signed bytes are the reference's projection, not the file's own
     vocabulary -- our file keeps its own names, only this projection uses
-    theirs). ``min_center_intensity`` is deliberately NOT included here yet
-    -- see the game_ids.py module docstring note on that field.
+    theirs).
 
     Otherwise deliberately narrower than the whole game.json: schema_version,
     comment fields, agreed_between and rate-limiter minimums are never
@@ -43,7 +40,7 @@ def terms_from_shared_config(shared: SharedGameConfig) -> dict:
     world = shared.world
     movement = shared.movement_and_barriers
     pheromones = shared.pheromones
-    return {
+    terms = {
         "board_size": board.grid_size,
         "thief_start": list(board.thief_start),
         "cop_start": list(board.cop_start),
@@ -58,6 +55,9 @@ def terms_from_shared_config(shared: SharedGameConfig) -> dict:
         "smell_grid_size": pheromones.pheromone_grid_size,
         "num_games": shared.network_and_league.num_games,
     }
+    if pheromones.pheromone_min_center_intensity is not None:
+        terms["min_center_intensity"] = pheromones.pheromone_min_center_intensity
+    return terms
 
 
 def canonical_terms_json(terms: dict) -> str:

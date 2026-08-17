@@ -59,6 +59,11 @@ class Pheromones:
     pheromone_center_intensity: float
     pheromone_decay: float
     pheromone_grid_size: int
+    #: Not a numbered Appendix F row (docs/risk_register.md risk #2) -- an
+    #: optional, opponent-negotiated extension. None when not negotiated;
+    #: set only when a real pairing has agreed to sign it (e.g. moamteam,
+    #: 2026-08-17).
+    pheromone_min_center_intensity: float | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -84,13 +84,22 @@ def test_terms_from_shared_config_uses_reference_key_names() -> None:
     }
 
 
-def test_terms_from_shared_config_omits_min_center_intensity() -> None:
-    """Deliberately absent -- see the game_ids.py module docstring: our own
-    config schema treats this as a non-binding optional extension, and two
-    existing tests guard our real config against ever carrying it."""
+def test_terms_from_shared_config_omits_min_center_intensity_when_unset() -> None:
+    """The fixture config hasn't negotiated this extension, so it stays out
+    of the signed terms -- optional per-pairing, not a blanket inclusion."""
     shared = load_shared_config(FIXTURES / "valid_shared_game.json")
     terms = terms_from_shared_config(shared)
     assert "min_center_intensity" not in terms
+
+
+def test_terms_from_shared_config_includes_min_center_intensity_when_negotiated() -> None:
+    """The real config (moamteam, 2026-08-17) has negotiated it, so it must
+    be part of the signed terms -- either in both signatures or neither."""
+    shared = load_shared_config(
+        Path(__file__).resolve().parents[2] / "config" / "police" / "game.json"
+    )
+    terms = terms_from_shared_config(shared)
+    assert terms["min_center_intensity"] == 0.5
 
 
 def test_canonical_terms_json_is_compact_sorted_utf8() -> None:

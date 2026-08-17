@@ -37,7 +37,8 @@
     "pheromone_center_intensity": 0.9,
     "pheromone_decay": 0.10,
     "pheromone_grid_size": 5,
-    "_status_note": "All three constant, visually confirmed against Appendix F Table 16 and the Ch.4 scent-emission figure. Deliberately excludes 'pheromone_min_center_intensity' seen in the reference repo's config: that field is NOT a numbered Appendix F row and is not treated as mandatory here -- see `_post4b_supplementary_evidence/audit/risk_register.md` risk #2."
+    "pheromone_min_center_intensity": 0.5,
+    "_status_note": "First three constant, visually confirmed against Appendix F Table 16 and the Ch.4 scent-emission figure. pheromone_min_center_intensity is NOT a numbered Appendix F row (see `_post4b_supplementary_evidence/audit/risk_register.md` risk #2) but is included here as a negotiated extension, signed into the terms per moamteam's 2026-08-17 request -- their reading is that the reference implementation's own terms_from_config signs it as one of the fourteen terms, so it is either in both signatures or neither."
   },
   "network_and_league": {
     "response_timeout_sec": 30,

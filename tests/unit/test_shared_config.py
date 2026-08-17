@@ -12,7 +12,7 @@ from police_peer.shared.errors import ConfigError
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 REAL_CONFIG = Path(__file__).resolve().parents[2] / "config" / "police" / "game.json"
-EXPECTED_REAL_CONFIG_SHA256 = "8b6060d86ce69b9099ed6195e0f3ca4820969a776b5c7a8b8b8c3d5a9bd711dd"
+EXPECTED_REAL_CONFIG_SHA256 = "0d4e23d31942ebc04392332583e22c82f5d5cf5a376528cd3c33e74e6b400e3b"
 
 
 def test_valid_shared_config_loads() -> None:
@@ -64,9 +64,11 @@ def test_real_config_sha256_matches_expected() -> None:
     assert sha256_hex(REAL_CONFIG) == EXPECTED_REAL_CONFIG_SHA256
 
 
-def test_pheromone_min_center_intensity_not_present() -> None:
-    """The unverified reference-repo extension must not appear in our own config."""
-    import json
-
-    raw = json.loads(REAL_CONFIG.read_bytes())
-    assert "pheromone_min_center_intensity" not in raw.get("pheromones", {})
+def test_pheromone_min_center_intensity_matches_negotiated_value() -> None:
+    """Not a numbered Appendix F row, but signed into our real config as a
+    negotiated extension per moamteam's 2026-08-17 request -- their reading
+    is that the reference implementation's own terms_from_config signs it as
+    one of the fourteen terms, so it must be either in both signatures or
+    neither."""
+    config = load_shared_config(REAL_CONFIG)
+    assert config.pheromones.pheromone_min_center_intensity == 0.5

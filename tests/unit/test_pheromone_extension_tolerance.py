@@ -1,8 +1,11 @@
 """Generic optional-field tolerance for `pheromone_min_center_intensity` (a
-documented, non-binding reference-repo addition -- risk_register.md risk #2),
-not an opponent-specific hack. Proves: existing configs still load unchanged,
-an opponent's exact file carrying this extra field loads, the field is
-optional, and malformed values are rejected.
+documented, non-binding reference-repo addition -- risk_register.md risk #2).
+Proves: existing configs still load unchanged with the field defaulting to
+None, an opponent's exact file carrying this extra field loads with the real
+value retained, the field stays optional for any pairing that hasn't
+negotiated it, and malformed values are rejected. Our own real config now
+carries a negotiated value (moamteam, 2026-08-17) -- see
+test_shared_config.py::test_pheromone_min_center_intensity_matches_negotiated_value.
 """
 
 from __future__ import annotations
@@ -67,7 +70,7 @@ _BASE: dict = {
 def test_a_existing_config_without_extension_still_loads() -> None:
     cfg = SharedGameConfig.from_dict(copy.deepcopy(_BASE))
     assert cfg.pheromones.pheromone_center_intensity == 0.9
-    assert not hasattr(cfg.pheromones, "pheromone_min_center_intensity")
+    assert cfg.pheromones.pheromone_min_center_intensity is None
 
 
 def test_b_opponent_file_with_extension_loads() -> None:
@@ -77,6 +80,7 @@ def test_b_opponent_file_with_extension_loads() -> None:
     assert cfg.pheromones.pheromone_center_intensity == 0.9
     assert cfg.pheromones.pheromone_decay == 0.1
     assert cfg.pheromones.pheromone_grid_size == 5
+    assert cfg.pheromones.pheromone_min_center_intensity == 0.5
 
 
 def test_c_extension_field_is_optional() -> None:
@@ -95,16 +99,3 @@ def test_d_malformed_extension_values_rejected(bad_value: object) -> None:
     data["pheromones"]["pheromone_min_center_intensity"] = bad_value
     with pytest.raises(ConfigError, match="pheromone_min_center_intensity"):
         SharedGameConfig.from_dict(data)
-
-
-def test_extension_never_required_in_baseline() -> None:
-    """The real active config must never carry this extension -- it is not
-    a binding Appendix F value, and this test guards against it silently
-    creeping into our own baseline."""
-    import json
-    from pathlib import Path
-
-    real = json.loads(
-        (Path(__file__).resolve().parents[2] / "config" / "police" / "game.json").read_text()
-    )
-    assert "pheromone_min_center_intensity" not in real["pheromones"]
