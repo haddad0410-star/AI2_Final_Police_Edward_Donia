@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "_note": "Shared, agreed game terms for the AI2 final project (Edward Haddad / Donia Naser, official course-assigned group id 'ed%do111'). Both peers (police_peer, thief_peer) hold a byte-for-byte identical copy of this file. Source of every value: `_post4b_supplementary_evidence/audit/binding_parameters.json`, itself extracted from Appendix F of assignment_materials/police_thief_p2p.pdf.",
   "agreed_between": ["ed%do111", "amireman"],
-  "_agreed_between_note": "Real opponent negotiated 2026-08-17 (Gate B) -- amireman (contact ameer13400@gmail.com, prior real correspondence history predating this project). Non-counted friendly, standard 14 terms per their own stated request -- deliberately excludes pheromone_min_center_intensity (that field was negotiated with a different opponent, moamteam, and is not a standard Appendix F row).",
+  "_agreed_between_note": "Real opponent negotiated 2026-08-17 (Gate B) -- amireman, first contact by email. Non-counted friendly, standard 14 terms per their own stated request -- deliberately excludes pheromone_min_center_intensity (that field was negotiated with a different opponent, moamteam, and is not a standard Appendix F row).",
   "board_and_agents": {
     "grid_size": 7,
     "num_agents": 2,
