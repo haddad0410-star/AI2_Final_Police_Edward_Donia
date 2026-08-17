@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import secrets
 import uuid
 from collections.abc import Iterable
 
@@ -84,3 +85,25 @@ def derive_game_uid(terms: dict, group_ids: Iterable[str]) -> str:
     seed = canonical_terms_json(terms) + "|" + "|".join(sorted(group_ids))
     digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
     return str(uuid.UUID(digest[:32]))
+
+
+def build_signed_negotiate_message(
+    terms: dict, *, group_id: str, role: str, sub_game_number: int, correlation_id: str
+) -> dict:
+    """The pre-game agreement gate (SPEC section 4): sign the negotiated
+    terms with a fresh nonce so the opponent can independently re-verify
+    ``SHA256(canonical_json(terms)|nonce)`` over the terms it received.
+    """
+    nonce = secrets.token_hex(16)
+    signature = hashlib.sha256(
+        (canonical_terms_json(terms) + "|" + nonce).encode("utf-8")
+    ).hexdigest()
+    return {
+        "terms": terms,
+        "nonce": nonce,
+        "signature": signature,
+        "group_id": group_id,
+        "role": role,
+        "sub_game_number": sub_game_number,
+        "envelope": {"correlation_id": correlation_id, "group_id": group_id},
+    }

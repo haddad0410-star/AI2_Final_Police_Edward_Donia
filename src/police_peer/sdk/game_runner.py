@@ -17,12 +17,9 @@ from police_peer.infrastructure.http_transport import HttpOpponentTransport
 from police_peer.infrastructure.mcp_server import build_peer_server
 from police_peer.infrastructure.outbound_pacer import OutboundPacer
 from police_peer.infrastructure.server_lifecycle import ManagedServer
+from police_peer.sdk.negotiate_push import push_negotiate
 from police_peer.sdk.public_mode import build_public_middleware
-from police_peer.services.game_ids import (
-    derive_game_id,
-    derive_game_uid,
-    terms_from_shared_config,
-)
+from police_peer.services.game_ids import derive_game_id, derive_game_uid, terms_from_shared_config
 from police_peer.services.result_agreement import finalize_series_agreement
 from police_peer.services.series_artifacts import write_series_artifacts
 from police_peer.services.series_runtime import run_series
@@ -98,6 +95,7 @@ async def run_series_headless(
         public_token=public_token,
         config_dir=config_dir,
     )
+    await push_negotiate(shared, private, opponent_url, "police", opponent_token)
     # One pacer for the WHOLE series (not per sub-game): its sliding window
     # must track cumulative outbound volume across all 6 sub-games, matching
     # the opponent's own incoming Gatekeeper's per-process (not per-sub-game)

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import uuid
 from pathlib import Path
 
 from police_peer.services.game_ids import (
+    build_signed_negotiate_message,
     canonical_terms_json,
     derive_game_id,
     derive_game_uid,
@@ -104,3 +106,33 @@ def test_terms_from_shared_config_includes_min_center_intensity_when_negotiated(
 
 def test_canonical_terms_json_is_compact_sorted_utf8() -> None:
     assert canonical_terms_json({"b": 1, "a": "אני"}) == '{"a":"אני","b":1}'
+
+
+def test_build_signed_negotiate_message_signature_self_verifies() -> None:
+    """A receiver re-verifies SHA256(canonical_json(terms)|nonce) over the
+    terms it received using the sender's nonce -- this must round-trip."""
+    terms = {"board_size": 7, "num_games": 6}
+    message = build_signed_negotiate_message(
+        terms, group_id="ed%do111", role="police", sub_game_number=1, correlation_id="cid"
+    )
+    expected = hashlib.sha256(
+        (canonical_terms_json(terms) + "|" + message["nonce"]).encode("utf-8")
+    ).hexdigest()
+    assert message["signature"] == expected
+    assert message["terms"] == terms
+    assert message["group_id"] == "ed%do111"
+    assert message["role"] == "police"
+    assert message["sub_game_number"] == 1
+    assert message["envelope"] == {"correlation_id": "cid", "group_id": "ed%do111"}
+
+
+def test_build_signed_negotiate_message_nonce_is_fresh_each_call() -> None:
+    terms = {"board_size": 7}
+    a = build_signed_negotiate_message(
+        terms, group_id="g", role="police", sub_game_number=1, correlation_id="cid"
+    )
+    b = build_signed_negotiate_message(
+        terms, group_id="g", role="police", sub_game_number=1, correlation_id="cid"
+    )
+    assert a["nonce"] != b["nonce"]
+    assert a["signature"] != b["signature"]
