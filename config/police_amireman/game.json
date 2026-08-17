@@ -37,7 +37,8 @@
     "pheromone_center_intensity": 0.9,
     "pheromone_decay": 0.10,
     "pheromone_grid_size": 5,
-    "_status_note": "Deliberately excludes pheromone_min_center_intensity, matching amireman's own config and their stated 'standard 14 terms' -- see risk_register.md risk #2."
+    "pheromone_min_center_intensity": 0.5,
+    "_status_note": "pheromone_min_center_intensity is NOT a numbered Appendix F row (risk_register.md risk #2) and, as of 2026-08-17, is not present in amireman's own published config/game.json (github.com/AMIR13BD/Game-P2P-Cop-Chase-Police, verified directly). Added here at amireman's explicit request despite that discrepancy -- see conversation notes for 2026-08-17/18."
   },
   "network_and_league": {
     "response_timeout_sec": 30,
