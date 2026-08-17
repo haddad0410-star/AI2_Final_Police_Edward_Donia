@@ -77,10 +77,17 @@ def test_real_active_toml_configs_use_official_group_id() -> None:
 
 
 def test_real_active_json_configs_agree_on_official_id_only() -> None:
-    for rel in ("config/police/game.json", "config/police_advanced/game.json"):
-        data = json.loads((REPO_ROOT / rel).read_text())
-        # exactly one entry -- no opponent id fabricated during migration.
-        assert data["agreed_between"] == [OFFICIAL_GROUP_ID], rel
+    # police_advanced stays self-play-only; no opponent id fabricated there.
+    data = json.loads((REPO_ROOT / "config" / "police_advanced" / "game.json").read_text())
+    assert data["agreed_between"] == [OFFICIAL_GROUP_ID]
+
+
+def test_real_config_pairing_is_the_negotiated_opponent() -> None:
+    # config/police/game.json carries a REAL negotiated opponent (moamteam,
+    # 2026-08-17, Gate B) -- not fabricated, see the file's own
+    # _agreed_between_note.
+    data = json.loads((REPO_ROOT / "config" / "police" / "game.json").read_text())
+    assert data["agreed_between"] == [OFFICIAL_GROUP_ID, "moamteam"]
 
 
 def test_group_id_percent_survives_toml_round_trip(tmp_path: Path) -> None:
