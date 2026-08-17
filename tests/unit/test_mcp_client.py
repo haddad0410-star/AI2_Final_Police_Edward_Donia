@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 
+import anyio
 import httpx
 import pytest
 from mcp.shared.exceptions import McpError
@@ -136,6 +137,28 @@ def test_successful_health_call_unaffected(monkeypatch) -> None:
     monkeypatch.setattr(mc, "Client", _OkClient)
     result = asyncio.run(mc.call_health("http://x/mcp"))
     assert result == {"status": "ok", "role": "police"}
+
+
+def test_httpx_read_timeout_is_peer_unavailable(monkeypatch) -> None:
+    """2026-08-17 regression: httpx.ReadTimeout is a subclass of
+    httpx.TransportError, NOT the builtin TimeoutError -- it was falling
+    through _CONNECTION_FAILURES entirely and crashing the whole process
+    instead of failing this one call gracefully, against a real opponent
+    whose server died mid-response."""
+    monkeypatch.setattr(mc, "Client", _client_factory(httpx.ReadTimeout("timed out")))
+    with pytest.raises(PeerUnavailableError):
+        asyncio.run(mc.call_health("http://x/mcp"))
+
+
+def test_anyio_closed_resource_error_is_peer_unavailable(monkeypatch) -> None:
+    """2026-08-17 regression: a peer's process exiting mid-SSE-stream (an
+    on-demand-binding opponent whose server dies partway through a response)
+    surfaces as anyio.ClosedResourceError from the SSE reader, not any of
+    the previously-caught types -- must become PeerUnavailableError, not an
+    uncaught crash."""
+    monkeypatch.setattr(mc, "Client", _client_factory(anyio.ClosedResourceError()))
+    with pytest.raises(PeerUnavailableError):
+        asyncio.run(mc.call_health("http://x/mcp"))
 
 
 def test_non_timeout_mcp_error_is_not_swallowed(monkeypatch) -> None:
