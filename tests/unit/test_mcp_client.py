@@ -139,6 +139,19 @@ def test_successful_health_call_unaffected(monkeypatch) -> None:
     assert result == {"status": "ok", "role": "police"}
 
 
+def test_httpx_status_error_is_peer_unavailable(monkeypatch) -> None:
+    """2026-08-17 regression: the mcp SDK's own response.raise_for_status()
+    raises httpx.HTTPStatusError on ANY non-2xx from the opponent (401, 502,
+    ...) -- a different httpx exception branch than TransportError, so it
+    was still crashing the process even after the ReadTimeout fix."""
+    request = httpx.Request("POST", "http://x/mcp")
+    response = httpx.Response(502, request=request)
+    exc = httpx.HTTPStatusError("502 Bad Gateway", request=request, response=response)
+    monkeypatch.setattr(mc, "Client", _client_factory(exc))
+    with pytest.raises(PeerUnavailableError):
+        asyncio.run(mc.call_health("http://x/mcp"))
+
+
 def test_httpx_read_timeout_is_peer_unavailable(monkeypatch) -> None:
     """2026-08-17 regression: httpx.ReadTimeout is a subclass of
     httpx.TransportError, NOT the builtin TimeoutError -- it was falling
