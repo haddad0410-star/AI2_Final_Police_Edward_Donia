@@ -55,11 +55,42 @@ def test_terms_from_shared_config_excludes_non_negotiated_fields() -> None:
     (schema_version, agreed_between, rate limiter minimums, ...)."""
     shared = load_shared_config(FIXTURES / "valid_shared_game.json")
     terms = terms_from_shared_config(shared)
-    assert terms["grid_size"] == 7
+    assert terms["board_size"] == 7
     assert terms["num_games"] == 6
     assert "schema_version" not in terms
     assert "agreed_between" not in terms
     assert "rate_limiter_gatekeeper" not in terms
+
+
+def test_terms_from_shared_config_uses_reference_key_names() -> None:
+    """Signed bytes are the reference implementation's projection, not our
+    config file's own on-disk vocabulary (grid_size, map_area, ...)."""
+    shared = load_shared_config(FIXTURES / "valid_shared_game.json")
+    terms = terms_from_shared_config(shared)
+    assert set(terms) == {
+        "board_size",
+        "thief_start",
+        "cop_start",
+        "axis_origin_corner",
+        "axis_start_index",
+        "setting",
+        "hint_max_words",
+        "barriers_max",
+        "max_steps",
+        "emit_intensity",
+        "decay_per_step",
+        "smell_grid_size",
+        "num_games",
+    }
+
+
+def test_terms_from_shared_config_omits_min_center_intensity() -> None:
+    """Deliberately absent -- see the game_ids.py module docstring: our own
+    config schema treats this as a non-binding optional extension, and two
+    existing tests guard our real config against ever carrying it."""
+    shared = load_shared_config(FIXTURES / "valid_shared_game.json")
+    terms = terms_from_shared_config(shared)
+    assert "min_center_intensity" not in terms
 
 
 def test_canonical_terms_json_is_compact_sorted_utf8() -> None:

@@ -42,6 +42,19 @@ def aggregate(records: Iterable[SubGameRecord]) -> tuple[int, int]:
     return police, thief
 
 
+def apply_tie_bonus(police_total: int, thief_total: int, tie_score: int) -> tuple[int, int]:
+    """Appendix-F series-level tie reward: if the two summed totals end
+    equal, ADD ``tie_score`` to each side rather than replacing either --
+    replacing would invert the ordering the reward protects (a hard-fought
+    level series would pay less than a single narrow sub-game win). No
+    single sub-game can tie (``SubGameResult`` has no tie outcome), so this
+    only ever fires on the series-level sum.
+    """
+    if police_total == thief_total:
+        return police_total + tie_score, thief_total + tie_score
+    return police_total, thief_total
+
+
 def resolve_final_agreement(
     our_police: int,
     our_thief: int,

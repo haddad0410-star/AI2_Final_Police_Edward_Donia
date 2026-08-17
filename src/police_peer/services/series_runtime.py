@@ -21,6 +21,7 @@ from police_peer.services.series_scoring import (
     FinalAgreement,
     SubGameRecord,
     aggregate,
+    apply_tie_bonus,
     resolve_final_agreement,
 )
 from police_peer.services.subgame_runtime import (
@@ -93,7 +94,7 @@ async def run_series(
             reason = "technical_loss_ended_series"
             break
         machine.require(TransitionEvent.of(E.BEGIN_AUDIT))
-    agreement = _finalize(machine, records, their_totals, reason)
+    agreement = _finalize(machine, records, their_totals, reason, shared.scoring.tie_score)
     return SeriesResult(tuple(records), agreement, reason, machine.state, tuple(sealed_by_game))
 
 
@@ -109,8 +110,9 @@ def _finalize(
     records: list[SubGameRecord],
     their_totals: tuple[int, int] | None,
     reason: str,
+    tie_score: int,
 ) -> FinalAgreement:
-    our_police, our_thief = aggregate(records)
+    our_police, our_thief = apply_tie_bonus(*aggregate(records), tie_score)
     if reason != "completed":
         return FinalAgreement(False, "technical_loss", 0, 0)
     their_police, their_thief = their_totals if their_totals is not None else (None, None)

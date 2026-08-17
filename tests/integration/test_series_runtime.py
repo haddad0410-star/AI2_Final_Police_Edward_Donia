@@ -12,6 +12,7 @@ from police_peer.services.series_runtime import run_series
 from police_peer.services.series_scoring import (
     SubGameRecord,
     aggregate,
+    apply_tie_bonus,
     resolve_final_agreement,
 )
 from police_peer.services.transport import OpponentReveal, TechnicalFailure
@@ -109,3 +110,24 @@ def test_aggregate_sums_records() -> None:
         SubGameRecord(2, SubGameResult.SURVIVAL, 5, 10, 35, True),
     ]
     assert aggregate(records) == (25, 15)
+
+
+def test_tie_bonus_added_on_equal_series_totals() -> None:
+    """Appendix-F series tie reward ADDS to both totals, it never replaces."""
+    assert apply_tie_bonus(25, 25, 2) == (27, 27)
+
+
+def test_tie_bonus_not_applied_when_totals_differ() -> None:
+    assert apply_tie_bonus(120, 30, 2) == (120, 30)
+
+
+def test_tied_series_totals_still_agree_after_bonus() -> None:
+    """Both sides apply the same local transformation before declaring, so a
+    genuine series tie still reaches mutual agreement post-bonus."""
+    our_police, our_thief = apply_tie_bonus(
+        *aggregate([SubGameRecord(1, SubGameResult.SURVIVAL, 15, 15, 35, True)]), tie_score=2
+    )
+    their_police, their_thief = apply_tie_bonus(15, 15, 2)
+    agreement = resolve_final_agreement(our_police, our_thief, their_police, their_thief)
+    assert agreement.agreed is True
+    assert (agreement.police_total, agreement.thief_total) == (17, 17)

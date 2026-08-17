@@ -13,9 +13,9 @@
     "_status_note": "grid_size=minimum (may only be raised); the rest of this block is negotiable (example values used as default absent an explicit agreement, per Appendix F's own status-definition rule)."
   },
   "world": {
-    "map_area": "New York",
+    "map_area": "Haifa",
     "hint_max_words": 15,
-    "_status_note": "Both fields negotiable; 'New York' and 15 are the book's own Appendix F Table 14 example values, used here as the mandatory default absent a negotiated alternative -- not copied from the reference repository."
+    "_status_note": "Both fields negotiable; 15 is the book's own Appendix F Table 14 example value, used as the mandatory default absent a negotiated alternative. map_area was 'New York' (the same example value) until negotiated to 'Haifa' with moamteam, 2026-08-17."
   },
   "movement_and_barriers": {
     "move_set": ["N", "S", "E", "W", "STAY"],
