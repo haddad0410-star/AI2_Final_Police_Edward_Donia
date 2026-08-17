@@ -39,6 +39,6 @@ uv.lock.tmp
 # Project runtime artifacts (kept locally, not part of source)
 logs/*.json
 !logs/.gitkeep
-reports/*.json
-reports/*.txt
+reports/**/*.json
+reports/**/*.txt
 !reports/.gitkeep

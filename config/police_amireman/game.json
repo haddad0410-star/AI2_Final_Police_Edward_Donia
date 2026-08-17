@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "_note": "Shared, agreed game terms for the AI2 final project (Edward Haddad / Donia Naser, official course-assigned group id 'ed%do111'). Both peers (police_peer, thief_peer) hold a byte-for-byte identical copy of this file. Source of every value: `_post4b_supplementary_evidence/audit/binding_parameters.json`, itself extracted from Appendix F of assignment_materials/police_thief_p2p.pdf.",
+  "agreed_between": ["ed%do111", "amireman"],
+  "_agreed_between_note": "Real opponent negotiated 2026-08-17 (Gate B) -- amireman (contact ameer13400@gmail.com, prior real correspondence history predating this project). Non-counted friendly, standard 14 terms per their own stated request -- deliberately excludes pheromone_min_center_intensity (that field was negotiated with a different opponent, moamteam, and is not a standard Appendix F row).",
+  "board_and_agents": {
+    "grid_size": 7,
+    "num_agents": 2,
+    "thief_start": [3, 3],
+    "cop_start": [0, 0],
+    "axis_origin_corner": "top-left",
+    "axis_start_index": 0,
+    "_status_note": "grid_size=minimum (may only be raised); the rest of this block is negotiable (example values used as default absent an explicit agreement, per Appendix F's own status-definition rule)."
+  },
+  "world": {
+    "map_area": "Haifa",
+    "hint_max_words": 15,
+    "_status_note": "Both fields negotiable; matches amireman's own config/game.json exactly (verified 2026-08-17)."
+  },
+  "movement_and_barriers": {
+    "move_set": ["N", "S", "E", "W", "STAY"],
+    "max_barriers": 14,
+    "max_moves": 35,
+    "survival_threshold": 35,
+    "_status_note": "move_set is constant. max_barriers/max_moves/survival_threshold are minimums (may only be raised by mutual agreement)."
+  },
+  "scoring": {
+    "capture_cop": 20,
+    "capture_thief": 5,
+    "survival_cop": 5,
+    "survival_thief": 10,
+    "tie_score": 2,
+    "technical_loss": 0,
+    "_status_note": "capture_cop/capture_thief/survival_cop/survival_thief/tie_score are constants, each a separately numbered Appendix F Table 17 row. technical_loss=0 is cross-confirmed (book's own inline example + reference config agree) but is NOT a separately numbered Appendix F row."
+  },
+  "pheromones": {
+    "pheromone_center_intensity": 0.9,
+    "pheromone_decay": 0.10,
+    "pheromone_grid_size": 5,
+    "_status_note": "Deliberately excludes pheromone_min_center_intensity, matching amireman's own config and their stated 'standard 14 terms' -- see risk_register.md risk #2."
+  },
+  "network_and_league": {
+    "response_timeout_sec": 30,
+    "watchdog_timeout_sec": 60,
+    "num_games": 6,
+    "diversity_reward": 10,
+    "min_games_to_pass": 2,
+    "max_games_per_team": 10,
+    "token_budget_per_series": 200000,
+    "_status_note": "num_games=6 (constant, visually confirmed Appendix F Table 18 row 1) is the REQUIRED length of a full series against one opponent -- NOT 1."
+  },
+  "rate_limiter_gatekeeper": {
+    "requests_per_minute": 30,
+    "concurrent_requests": 2,
+    "retry_backoff_sec": 5,
+    "max_retries": 3,
+    "queue_depth": 100,
+    "_status_note": "All five are minimums (Appendix F Table 19), may only be raised by mutual agreement."
+  }
+}
